@@ -1,15 +1,19 @@
 Class SecurityRule {
     [string]$AccessList
     [int]$Number
+    [string]$Action
+    
+    [string]$SourceInterface
+    [string]$DestinationInterface
+    
     [string]$Source
     [string]$Destination
+    
     [string]$Protocol
     [string]$SourcePort
     [string]$DestinationPort
-    [string]$Action
-    [string]$InboundInterface
-    [string]$OutboundInterface
-    [string]$State
+    
+    [string]$PacketState
     [string]$RejectWith
     [string]$IcmpType
     [string]$Enabled
@@ -17,47 +21,37 @@ Class SecurityRule {
     SecurityRule([string] $AclType) {
         switch ($AclType) {
             Asa {
-                $this.AccessList        = ""
-                $this.Number            = 0
-                $this.Source            = ""
-                $this.Destination       = ""
-                $this.Protocol          = ""
-                $this.SourcePort        = ""
-                $this.DestinationPort   = ""
-                $this.Action            = ""
-                $this.InboundInterface  = ""
-                $this.OutboundInterface = ""
-                $this.State             = ""
-                $this.RejectWith        = ""
-                $this.IcmpType          = ""
-                $this.Enabled           = $true
+                $this.AccessList           = ""
+                $this.Number               = 0
+                $this.Source               = ""
+                $this.Destination          = ""
+                $this.Protocol             = ""
+                $this.SourcePort           = ""
+                $this.DestinationPort      = ""
+                $this.Action               = ""
+                $this.SourceInterface      = ""
+                $this.DestinationInterface = ""
+                $this.PacketState          = ""
+                $this.RejectWith           = ""
+                $this.IcmpType             = ""
+                $this.Enabled              = $true
             }
             default {
-                $this.AccessList        = ""
-                $this.Number            = 0
-                $this.Source            = ""
-                $this.Destination       = ""
-                $this.Protocol          = ""
-                $this.SourcePort        = ""
-                $this.DestinationPort   = ""
-                $this.Action            = ""
-                $this.InboundInterface  = ""
-                $this.OutboundInterface = ""
-                $this.State             = ""
-                $this.RejectWith        = ""
-                $this.IcmpType          = ""
+                $this.AccessList           = ""
+                $this.Number               = 0
+                $this.Source               = ""
+                $this.Destination          = ""
+                $this.Protocol             = ""
+                $this.SourcePort           = ""
+                $this.DestinationPort      = ""
+                $this.Action               = ""
+                $this.SourceInterface      = ""
+                $this.DestinationInterface = ""
+                $this.PacketState          = ""
+                $this.RejectWith           = ""
+                $this.IcmpType             = ""
+                $this.Enabled              = $true
             }
         }
     }
 }
-
-<#
-#Defines Constructor
- Dog([String] $Name, [String] $Breed, [String] $OwnerName, [String]$OwnerAddress, [DateTime]$RegistrationDate)
- {
- $this.Breed = $Breed
- $this.Name = $Name
- $this.OwnerName = $OwnerName
- $this.OwnerAddress = $OwnerAddress
- $this.RegistrationDate = $RegistrationDate
- }#>

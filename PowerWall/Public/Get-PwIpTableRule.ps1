@@ -23,19 +23,19 @@ function Get-PwIpTableRule {
     $ReturnArray = @()
     
     # Setup all the various parameters for iptables that we're going to process.
-    $IpTablesParams                   = @{}
-    $IpTablesParams.AccessList        = '-A'
-    $IpTablesParams.Destination       = '-d'
-    $IpTablesParams.Source            = '-s'
-    $IpTablesParams.Protocol          = '-p'
-    $IpTablesParams.DestinationPort   = '--dport'
-    $IpTablesParams.SourcePort        = '--sport'
-    $IpTablesParams.Action            = '-j'
-    $IpTablesParams.InboundInterface  = '-i'
-    $IpTablesParams.OutboundInterface = '-o'
-    $IpTablesParams.State             = '--state'
-    $IpTablesParams.RejectWith        = '--reject-with'
-    $IpTablesParams.IcmpType          = '--icmp-type'
+    $IpTablesParams                      = @{}
+    $IpTablesParams.AccessList           = '-A'
+    $IpTablesParams.Destination          = '-d'
+    $IpTablesParams.Source               = '-s'
+    $IpTablesParams.Protocol             = '-p'
+    $IpTablesParams.DestinationPort      = '--dport'
+    $IpTablesParams.SourcePort           = '--sport'
+    $IpTablesParams.Action               = '-j'
+    $IpTablesParams.SourceInterface      = '-i'
+    $IpTablesParams.DestinationInterface = '-o'
+    $IpTablesParams.PacketState          = '--state'
+    $IpTablesParams.RejectWith           = '--reject-with'
+    $IpTablesParams.IcmpType             = '--icmp-type'
 
     # Todo
     # SynFlag (bool), this is a single ! with nothing after/before it
@@ -63,6 +63,7 @@ function Get-PwIpTableRule {
 
         # Initialize the object, number will just be $i (should probably reset this for each chain)
         $NewObject = [SecurityRule]::new('iptables')
+        $global:test = [SecurityRule]::new('iptables')
         $NewObject.Number  = $i
         $ReturnArray      += $NewObject
 
@@ -81,10 +82,10 @@ function Get-PwIpTableRule {
         }
     }
 
-    $ReturnArray | Select-Object AccessList,Number,Action,
-                                 InboundInterface,OutboundInterface,
+    $ReturnArray <#| Select-Object AccessList,Number,Action,
+                                 SourceInterface,DestinationInterface,
                                  Source,Destination,
                                  Protocol,SourcePort,DestinationPort,
-                                 IcmpType,State,RejectWith
+                                 IcmpType,PacketState,RejectWith#>
 
 }
