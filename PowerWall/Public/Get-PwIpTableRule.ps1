@@ -24,7 +24,7 @@ function Get-PwIpTableRule {
     
     # Setup all the various parameters for iptables that we're going to process.
     $IpTablesParams                   = @{}
-    $IpTablesParams.Chain             = '-A'
+    $IpTablesParams.AccessList        = '-A'
     $IpTablesParams.Destination       = '-d'
     $IpTablesParams.Source            = '-s'
     $IpTablesParams.Protocol          = '-p'
@@ -62,7 +62,8 @@ function Get-PwIpTableRule {
         }
 
         # We can use the Names of the keys in the IpTablesParams hashtable for our properties
-        $NewObject         = "" | Select-Object ($IpTablesParams.GetEnumerator().Name + 'Number')
+        #$NewObject         = "" | Select-Object ($IpTablesParams.GetEnumerator().Name + 'Number')
+        $NewObject = New-Object -Type SecurityRule
         $NewObject.Number  = $i
         $ReturnArray      += $NewObject
 
@@ -81,10 +82,10 @@ function Get-PwIpTableRule {
         }
     }
 
-    $ReturnArray | Select-Object Chain,Number,Action,
+    $ReturnArray | Select-Object AccessList,Number,Action,
                                  InboundInterface,OutboundInterface,
                                  Source,Destination,
                                  Protocol,SourcePort,DestinationPort,
                                  IcmpType,State,RejectWith
-                                 
+
 }
