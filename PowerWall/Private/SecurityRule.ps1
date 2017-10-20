@@ -12,19 +12,52 @@ Class SecurityRule {
     [string]$State
     [string]$RejectWith
     [string]$IcmpType
+    [string]$Enabled
+
+    SecurityRule([string] $AclType) {
+        switch ($AclType) {
+            Asa {
+                $this.AccessList        = ""
+                $this.Number            = 0
+                $this.Source            = ""
+                $this.Destination       = ""
+                $this.Protocol          = ""
+                $this.SourcePort        = ""
+                $this.DestinationPort   = ""
+                $this.Action            = ""
+                $this.InboundInterface  = ""
+                $this.OutboundInterface = ""
+                $this.State             = ""
+                $this.RejectWith        = ""
+                $this.IcmpType          = ""
+                $this.Enabled           = $true
+            }
+            default {
+                $this.AccessList        = ""
+                $this.Number            = 0
+                $this.Source            = ""
+                $this.Destination       = ""
+                $this.Protocol          = ""
+                $this.SourcePort        = ""
+                $this.DestinationPort   = ""
+                $this.Action            = ""
+                $this.InboundInterface  = ""
+                $this.OutboundInterface = ""
+                $this.State             = ""
+                $this.RejectWith        = ""
+                $this.IcmpType          = ""
+            }
+        }
+    }
 }
 
 <#
-$IpTablesParams.Chain
-$IpTablesParams.Destination       = '-d'
-$IpTablesParams.Source            = '-s'
-$IpTablesParams.Protocol          = '-p'
-$IpTablesParams.DestinationPort   = '--dport'
-$IpTablesParams.SourcePort        = '--sport'
-$IpTablesParams.Action            = '-j'
-$IpTablesParams.InboundInterface  = '-i'
-$IpTablesParams.OutboundInterface = '-o'
-$IpTablesParams.State             = '--state'
-$IpTablesParams.RejectWith        = '--reject-with'
-$IpTablesParams.IcmpType          = '--icmp-type'
-#>
+#Defines Constructor
+ Dog([String] $Name, [String] $Breed, [String] $OwnerName, [String]$OwnerAddress, [DateTime]$RegistrationDate)
+ {
+ $this.Breed = $Breed
+ $this.Name = $Name
+ $this.OwnerName = $OwnerName
+ $this.OwnerAddress = $OwnerAddress
+ $this.RegistrationDate = $RegistrationDate
+ }#>

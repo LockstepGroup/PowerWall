@@ -61,9 +61,8 @@ function Get-PwIpTableRule {
             Write-Verbose "$VerbosePrefix processing line: $line"
         }
 
-        # We can use the Names of the keys in the IpTablesParams hashtable for our properties
-        #$NewObject         = "" | Select-Object ($IpTablesParams.GetEnumerator().Name + 'Number')
-        $NewObject = New-Object -Type SecurityRule
+        # Initialize the object, number will just be $i (should probably reset this for each chain)
+        $NewObject = [SecurityRule]::new('iptables')
         $NewObject.Number  = $i
         $ReturnArray      += $NewObject
 
