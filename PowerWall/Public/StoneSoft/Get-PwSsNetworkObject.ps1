@@ -19,10 +19,12 @@ function Get-PwSsNetworkObject {
     # Exported data should be xml
     $ExportedElements = [xml]$ExportedElements
     $NetworkObjects   = $ExportedElements.generic_import_export.network
+    $Hosts            = $ExportedElements.generic_import_export.host
     
     # This makes it easier to write new cmdlets
     $LoopArray = @()
     $LoopArray += $NetworkObjects
+    $LoopArray += $Hosts
 
     # Write-Progress actually slows processing down
     # Using a Stopwatch to just update the progress bar every second is fast and still useful
@@ -32,6 +34,7 @@ function Get-PwSsNetworkObject {
     
     # :fileloop allows us to break this loop using Get-RegexMatch
     :fileloop foreach ($entry in $LoopArray) {
+        $global:testing = $entry
 
         # Write progress bar, we're only updating every 1000ms, if we do it every line it takes forever
         $i++
@@ -46,9 +49,22 @@ function Get-PwSsNetworkObject {
         $NewObject    = [NetworkObject]::new()
         $ReturnArray += $NewObject
 
-        # Add the info
+        # Properties that exist on all types
         $NewObject.Name = $entry.Name
-        $NewObject.Value = $entry.ipv4_network
+
+        # 'network' entries
+        if ($entry.ipv4_network) {
+            $NewObject.Value += $entry.ipv4_network
+        }
+
+        # 'host' entries
+        if ($entry.mvia_address) {
+            $NewObject.Value += $entry.mvia_address.address
+            if ($entry.secondary.value.count -gt 0) {
+                $NewObject.Value += $entry.secondary.value
+            }
+        }
+        
     }
 
     $ReturnArray
