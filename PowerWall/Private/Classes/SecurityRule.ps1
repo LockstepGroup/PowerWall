@@ -1,6 +1,6 @@
 Class SecurityRule {
     [string]$AccessList
-    [int]$Number
+    [decimal]$Number
     [string]$Action
     
     [string]$SourceInterface
@@ -14,6 +14,7 @@ Class SecurityRule {
     [string]$DestinationPort
     [string[]]$Service
     
+    [string]$Comment
     [string]$PacketState
     [string]$RejectWith
     [string]$IcmpType

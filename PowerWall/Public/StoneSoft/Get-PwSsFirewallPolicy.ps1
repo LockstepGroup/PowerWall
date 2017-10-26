@@ -34,6 +34,8 @@ function Get-PwSsFirewallPolicy {
             $ReturnArray += $NewObject
 
             $NewObject.AccessList = $AccessList
+            $NewObject.Number     = $rule.rank
+            $NewObject.Comment    = $rule.comment
 
             # disabled
             if ($rule.is_disabled -eq 'true') {
@@ -45,6 +47,12 @@ function Get-PwSsFirewallPolicy {
             $NewObject.Destination = $rule.access_rule.match_part.match_destinations.match_destination_ref.value
             $NewObject.Service     = $rule.access_rule.match_part.match_services.match_service_ref.value
 
+            # Action
+            if ($rule.access_rule.vpn_action) {
+                $NewObject.Action = $rule.access_rule.vpn_action.vpn_ref.ref
+            } else {
+                $NewObject.Action = $rule.access_rule.action.type
+            }
         }
     }
 
