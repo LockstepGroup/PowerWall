@@ -12,6 +12,7 @@ Class SecurityRule {
     [string]$Protocol
     [string]$SourcePort
     [string]$DestinationPort
+    [string]$Service
     
     [string]$PacketState
     [string]$RejectWith
