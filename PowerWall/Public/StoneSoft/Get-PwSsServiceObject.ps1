@@ -18,68 +18,68 @@ function Get-PwSsServiceObject {
 
     # Exported data should be xml
     $ExportedElements = [xml]$ExportedElements
-    $NetworkObjects   = $ExportedElements.generic_import_export.network
-    $Hosts            = $ExportedElements.generic_import_export.host
-    $AddressRanges    = $ExportedElements.generic_import_export.address_range
-    $Groups           = $ExportedElements.generic_import_export.group
-    
-    # This makes it easier to write new cmdlets
-    $LoopArray = @()
-    $LoopArray += $NetworkObjects
-    $LoopArray += $Hosts
-    $LoopArray += $AddressRanges
-    $LoopArray += $Groups
+    $ServiceUdp       = $ExportedElements.generic_import_export.service_udp
+    $ServiceTcp       = $ExportedElements.generic_import_export.service_tcp
+    $ServiceIp        = $ExportedElements.generic_import_export.service_ip
 
-    # Write-Progress actually slows processing down
-    # Using a Stopwatch to just update the progress bar every second is fast and still useful
-    $i          = 0
-    $TotalLines = $LoopArray.Count
-    $StopWatch  = [System.Diagnostics.Stopwatch]::StartNew()
-    
-    # :fileloop allows us to break this loop using Get-RegexMatch
-    :fileloop foreach ($entry in $LoopArray) {
+    #
 
-        # Write progress bar, we're only updating every 1000ms, if we do it every line it takes forever
-        $i++
-		if ($StopWatch.Elapsed.TotalMilliseconds -ge 1000) {
-			$PercentComplete = [math]::truncate($i / $TotalLines * 100)
-	        Write-Progress -Activity "Reading Support Output" -Status "$PercentComplete% $i/$TotalLines" -PercentComplete $PercentComplete
-	        $StopWatch.Reset()
-			$StopWatch.Start()
-        }
+    function ParseServices {
+        [CmdletBinding()]
+        Param (
+            [Parameter(Mandatory=$True,Position=0)]
+            [array]$RawServices,
+
+            [Parameter(Mandatory=$True,Position=1)]
+            [string]$Protocol
+        )
+
+        $ReturnArray = @()
+
+        foreach ($entry in $RawServices) {
+                
+                # Initialize the object
+                $NewObject    = [ServiceObject]::new()
+                $ReturnArray += $NewObject
         
-        # Initialize the object
-        $NewObject    = [NetworkObject]::new()
-        $ReturnArray += $NewObject
+                # Properties that exist on all types
+                $NewObject.Name     = $entry.Name
+                $NewObject.Comment  = $entry.Comment
+                $NewObject.Protocol = $Protocol
 
-        # Properties that exist on all types
-        $NewObject.Name    = $entry.Name
-        $NewObject.Comment = $entry.Comment
-
-        # 'network' entries
-        if ($entry.ipv4_network) {
-            $NewObject.Value += $entry.ipv4_network
-        }
-
-        # 'host' entries
-        if ($entry.mvia_address) {
-            $NewObject.Value += $entry.mvia_address.address
-            if ($entry.secondary.value.count -gt 0) {
-                $NewObject.Value += $entry.secondary.value
+                # IP Protocols
+                if ($entry.protocol_number) {
+                    $NewObject.Protocol = $entry.protocol_number
+                }
+        
+                # Source ports
+                if ($entry.min_src_port) {
+                    $SourcePort = ""
+                    $SourcePort = $entry.min_src_port
+                    if ($entry.max_src_port) {
+                        $SourcePort += '-' + $entry.max_src_port
+                    }
+                    $NewObject.SourcePort += $SourcePort
+                }
+        
+                # Destination ports
+                if ($entry.min_dst_port) {
+                    $DestinationPort = ""
+                    $DestinationPort = $entry.min_dst_port
+                    if ($entry.max_dst_port) {
+                        $DestinationPort += '-' + $entry.max_dst_port
+                    }
+                    $NewObject.DestinationPort += $DestinationPort
+                }
             }
-        }
-
-        # 'address_range' entries
-        if ($entry.ip_range) {
-            $NewObject.Value += $entry.ip_range
-        }
-
-        # 'group' entries
-        if ($entry.ne_list) {
-            $NewObject.Value += $entry.ne_list.ref
-        }
         
+            $ReturnArray
+
     }
+
+    $ReturnArray += ParseServices -RawServices $ServiceUdp -Protocol 'Udp'
+    $ReturnArray += ParseServices -RawServices $ServiceTcp -Protocol 'Tcp'
+    $ReturnArray += ParseServices -RawServices $ServiceIp  -Protocol 'Ip'
 
     $ReturnArray
 }
