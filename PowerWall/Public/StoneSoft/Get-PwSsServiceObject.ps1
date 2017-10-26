@@ -21,6 +21,7 @@ function Get-PwSsServiceObject {
     $ServiceUdp       = $ExportedElements.generic_import_export.service_udp
     $ServiceTcp       = $ExportedElements.generic_import_export.service_tcp
     $ServiceIp        = $ExportedElements.generic_import_export.service_ip
+    $TcpServiceGroup  = $ExportedElements.generic_import_export.tcp_service_group
 
     #
 
@@ -71,15 +72,21 @@ function Get-PwSsServiceObject {
                     }
                     $NewObject.DestinationPort += $DestinationPort
                 }
+
+                # For groups
+                if ($entry.service_ref) {
+                    $NewObject.Members += $entry.service_ref.ref
+                }
             }
         
             $ReturnArray
 
     }
 
-    $ReturnArray += ParseServices -RawServices $ServiceUdp -Protocol 'Udp'
-    $ReturnArray += ParseServices -RawServices $ServiceTcp -Protocol 'Tcp'
-    $ReturnArray += ParseServices -RawServices $ServiceIp  -Protocol 'Ip'
+    $ReturnArray += ParseServices -RawServices $ServiceUdp      -Protocol 'Udp'
+    $ReturnArray += ParseServices -RawServices $ServiceTcp      -Protocol 'Tcp'
+    $ReturnArray += ParseServices -RawServices $ServiceIp       -Protocol 'Ip'
+    $ReturnArray += ParseServices -RawServices $TcpServiceGroup -Protocol 'Tcp'
 
     $ReturnArray
 }
