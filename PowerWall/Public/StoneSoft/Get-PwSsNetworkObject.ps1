@@ -2,18 +2,23 @@ function Get-PwSsNetworkObject {
     [CmdletBinding()]
     Param (
         [Parameter(Mandatory=$True,Position=0)]
-        [string]$ExportedElements
+        [string]$ExportedElementXml
     )
 
     # It's nice to be able to see what cmdlet is throwing output isn't it?
     $VerbosePrefix = "Get-PwSsNetworkObject: "
+
+    # Check for path and import
+    if (Test-Path $ExportedElementXml) {
+        $ExportedElements = Get-Content $ExportedElementXml
+    }
 
     # Setup return Array
     $ReturnArray = @()
 
     # Exported data should be xml
     $ExportedElements = [xml]$ExportedElements
-    $NetworkObjects = $ExportedElements.generic_import_export.network
+    $NetworkObjects   = $ExportedElements.generic_import_export.network
     
     # This makes it easier to write new cmdlets
     $LoopArray = @()
@@ -37,25 +42,13 @@ function Get-PwSsNetworkObject {
 			$StopWatch.Start()
         }
         
-        # Initialize the object, number will just be $i (should probably reset this for each chain)
-        $NewObject = [SecurityRule]::new('iptables')
-        $global:test = [SecurityRule]::new('iptables')
-        $NewObject.Number  = $i
-        $ReturnArray      += $NewObject
+        # Initialize the object
+        $NewObject    = [NetworkObject]::new()
+        $ReturnArray += $NewObject
 
-        # These should be used for most of our parsing.
-        $RegexParams = @{}
-        $RegexParams.StringToEval = $line
-        $RegexParams.ReturnGroupNum = 1
-
-        foreach ($param in $IpTablesParams.GetEnumerator()) {
-            $RegexParams.RegexString = $param.Value + '\ ([^\ ]+)'
-            $Property = $param.Name
-            $Match = Get-RegexMatch @RegexParams
-            if ($Match) {
-                $NewObject.$Property = $Match
-            }
-        }
+        # Add the info
+        $NewObject.Name = $entry.Name
+        $NewObject.Value = $entry.ipv4_network
     }
 
     $ReturnArray
