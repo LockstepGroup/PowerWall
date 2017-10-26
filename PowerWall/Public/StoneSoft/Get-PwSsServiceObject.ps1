@@ -1,4 +1,4 @@
-function Get-PwSsNetworkObject {
+function Get-PwSsServiceObject {
     [CmdletBinding()]
     Param (
         [Parameter(Mandatory=$True,Position=0)]
@@ -6,7 +6,7 @@ function Get-PwSsNetworkObject {
     )
 
     # It's nice to be able to see what cmdlet is throwing output isn't it?
-    $VerbosePrefix = "Get-PwSsNetworkObject: "
+    $VerbosePrefix = "Get-PwSsServiceObject: "
 
     # Check for path and import
     if (Test-Path $ExportedElementXml) {
