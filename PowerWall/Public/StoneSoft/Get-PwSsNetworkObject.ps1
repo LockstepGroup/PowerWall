@@ -20,11 +20,15 @@ function Get-PwSsNetworkObject {
     $ExportedElements = [xml]$ExportedElements
     $NetworkObjects   = $ExportedElements.generic_import_export.network
     $Hosts            = $ExportedElements.generic_import_export.host
+    $AddressRanges    = $ExportedElements.generic_import_export.address_range
+    $Groups           = $ExportedElements.generic_import_export.group
     
     # This makes it easier to write new cmdlets
     $LoopArray = @()
     $LoopArray += $NetworkObjects
     $LoopArray += $Hosts
+    $LoopArray += $AddressRanges
+    $LoopArray += $Groups
 
     # Write-Progress actually slows processing down
     # Using a Stopwatch to just update the progress bar every second is fast and still useful
@@ -50,7 +54,8 @@ function Get-PwSsNetworkObject {
         $ReturnArray += $NewObject
 
         # Properties that exist on all types
-        $NewObject.Name = $entry.Name
+        $NewObject.Name    = $entry.Name
+        $NewObject.Comment = $entry.Comment
 
         # 'network' entries
         if ($entry.ipv4_network) {
@@ -63,6 +68,16 @@ function Get-PwSsNetworkObject {
             if ($entry.secondary.value.count -gt 0) {
                 $NewObject.Value += $entry.secondary.value
             }
+        }
+
+        # 'address_range' entries
+        if ($entry.ip_range) {
+            $NewObject.Value += $entry.ip_range
+        }
+
+        # 'group' entries
+        if ($entry.ne_list) {
+            $NewObject.Value += $entry.ne_list.ref
         }
         
     }
