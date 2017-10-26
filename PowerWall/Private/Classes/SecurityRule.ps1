@@ -6,13 +6,13 @@ Class SecurityRule {
     [string]$SourceInterface
     [string]$DestinationInterface
     
-    [string]$Source
-    [string]$Destination
+    [string[]]$Source
+    [string[]]$Destination
     
     [string]$Protocol
     [string]$SourcePort
     [string]$DestinationPort
-    [string]$Service
+    [string[]]$Service
     
     [string]$PacketState
     [string]$RejectWith
