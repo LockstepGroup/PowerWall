@@ -1,4 +1,5 @@
 Class ServiceObject {
+    static [string] $Type = "Service"
     [string]$Name
     [string]$Comment
     [string]$Protocol
