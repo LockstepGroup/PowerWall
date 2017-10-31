@@ -49,6 +49,9 @@ function Resolve-PwObject {
                     }
                     
                 }
+                'SsExpression' {
+                    $ReturnArray += $Lookup
+                }
                 default {
                     Throw "Type not handled: $($Lookup.GetType().Name)"
                 }

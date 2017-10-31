@@ -20,38 +20,68 @@ function Resolve-PwSecurityPolicy {
     $ServiceResolved = @()
     
     $MainProgressParams = @{}
-    
-    
-    
-    
-    
-    
     $MainProgressParams.Activity        = 'Resolving Sources'
     $MainProgressParams.Status          = 'Step 1/3: '
     $StartingPercentComplete            = 0
     $MainProgressParams.PercentComplete = $StartingPercentComplete
     Write-Progress @MainProgressParams
 
-    $i = 0
-    # Sources
-    foreach ($entry in $Policy) {
-        Write-Verbose "$VerbosePrefix $($entry.Accesslist): $($entry.Number)"
-        $CopyProps = ($entry | Get-Member -MemberType property).name
-        
-        foreach ($value in $entry.Source) {
-            $ResolvedObjects = Resolve-PwObject -ObjectToResolve $value -ObjectList $NetworkObjects
+    function Resolve-Property {
+        [CmdletBinding()]
+        Param (
+            [Parameter(Mandatory=$True,Position=0)]
+            $Policy,
+    
+            [Parameter(Mandatory=$True,Position=1)]
+            [ValidateSet("Source","Destination","Service")]             
+            [string]$Property,
+
+            [Parameter(Mandatory=$True,Position=2)]
+            [array]$Objects
+        )
+
+        $ReturnArray = @()
+        $CopyProps = ($Policy | Get-Member -MemberType property).name
+
+        foreach ($value in $Policy.$Property) {
+            $ResolvedObjects = Resolve-PwObject -ObjectToResolve $value -ObjectList $Objects
             foreach ($r in $ResolvedObjects) {
                 $NewObject = [ResolvedSecurityPolicy]::new()
-
+                
+                # should convert this to a method on the ResolvedSecurityPolicy class
                 foreach ($prop in $CopyProps) {
                     $NewObject.$prop = $entry.$prop
                 }
 
-                $NewObject.Source         = $value
-                $NewObject.ResolvedSource = $r
-                $SourceResolved += $NewObject
+                switch ($Property) {
+                    'Service' {
+                        $NewObject.Service         = $value
+                        $NewObject.Protocol        = $r.Protocol
+                        $NewObject.SourcePort      = $r.SourcePort
+                        $NewObject.DestinationPort = $r.DestinationPort
+                        $ReturnArray += $NewObject
+                    }
+                    { ($_ -eq 'Source') -or `
+                      ($_ -eq 'Destination') } {
+                        $NewObject.$Property           = $value
+                        $NewObject."Resolved$Property" = $r
+                        $ReturnArray += $NewObject
+                    }
+                    default {
+                        Throw "$VerbosePrefix Property not handled: $Property"
+                    }
+                }
+
             }
         }
+
+        $ReturnArray
+    }
+
+    $i = 0
+    # Sources
+    foreach ($entry in $Policy) {
+        $SourceResolved += Resolve-Property -Policy $entry -Property Source -Objects $NetworkObjects
         
         # Update Progress Bar
         $i++
@@ -70,23 +100,7 @@ function Resolve-PwSecurityPolicy {
     $i = 0
     # Destinations
     foreach ($entry in $SourceResolved) {
-        Write-Verbose "$VerbosePrefix $($entry.Accesslist): $($entry.Number)"
-        $CopyProps = ($entry | Get-Member -MemberType property).name
-        
-        foreach ($value in $entry.Destination) {
-            $ResolvedObjects = Resolve-PwObject -ObjectToResolve $value -ObjectList $NetworkObjects
-            foreach ($r in $ResolvedObjects) {
-                $NewObject = [ResolvedSecurityPolicy]::new()
-
-                foreach ($prop in $CopyProps) {
-                    $NewObject.$prop = $entry.$prop
-                }
-
-                $NewObject.Destination         = $value
-                $NewObject.ResolvedDestination = $r
-                $DestinationResolved += $NewObject
-            }
-        }
+        $DestinationResolved += Resolve-Property -Policy $entry -Property Destination -Objects $NetworkObjects
 
         # Update Progress Bar
         $i++
@@ -103,7 +117,7 @@ function Resolve-PwSecurityPolicy {
     $i = 0
     # Services
     foreach ($entry in $DestinationResolved) {
-        Write-Verbose "$VerbosePrefix $($entry.Accesslist): $($entry.Number)"
+        <#Write-Verbose "$VerbosePrefix $($entry.Accesslist): $($entry.Number)"
         $CopyProps = ($entry | Get-Member -MemberType property).name
         
         foreach ($value in $entry.Service) {
@@ -121,7 +135,8 @@ function Resolve-PwSecurityPolicy {
                 $NewObject.DestinationPort = $r.DestinationPort
                 $ServiceResolved += $NewObject
             }
-        }
+        }#>
+        $ServiceResolved += Resolve-Property -Policy $entry -Property Service -Objects $ServiceObjects
 
         # Update Progress Bar
         $i++
