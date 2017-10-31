@@ -22,21 +22,32 @@ function Resolve-PwObject {
                     if ($Lookup.Members) {
                         $ReturnArray += Resolve-PwObject -ObjectToResolve $Lookup.Members -ObjectList $ObjectList
                     } else {
-                        $New = "" | Select SourcePort,DestinationPort
+                        $New = "" | Select-Object Protocol,SourcePort,DestinationPort
 
                         if ($Lookup.SourcePort) {
-                            $New.SourcePort = $Lookup.Protocol + '/' + $Lookup.SourcePort
+                            $New.SourcePort = $Lookup.SourcePort
                         }
 
                         if ($Lookup.DestinationPort) {
-                            $New.DestinationPort = $Lookup.Protocol + '/' + $Lookup.DestinationPort
+                            $New.DestinationPort = $Lookup.DestinationPort
+                        }
+
+                        if ($Lookup.Protocol) {
+                            $New.Protocol = ($Lookup.Protocol).ToLower()
                         }
 
                         $ReturnArray += $New
                     }
                 }
                 'NetworkObject' {
-                    $ReturnArray += Resolve-PwObject -ObjectToResolve $Lookup.Value -ObjectList $ObjectList
+                    foreach ($value in $Lookup.Value) {
+                        if ($value -ceq $object) {
+                            $ReturnArray += $value
+                        } else {
+                            $ReturnArray += Resolve-PwObject -ObjectToResolve $value -ObjectList $ObjectList
+                        }
+                    }
+                    
                 }
                 default {
                     Throw "Type not handled: $($Lookup.GetType().Name)"

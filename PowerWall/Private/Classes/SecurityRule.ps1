@@ -7,7 +7,10 @@ Class SecurityRule {
     [string]$DestinationInterface
     
     [string[]]$Source
+    [bool]$SourceNegate
+    
     [string[]]$Destination
+    [bool]$DestinationNegate
     
     [string]$Protocol
     [string]$SourcePort
