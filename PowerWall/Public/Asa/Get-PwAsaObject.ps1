@@ -7,10 +7,19 @@ function Get-PwAsaObject {
 
 	Param (
 		[Parameter(Mandatory=$True,Position=0)]
-		[array]$Config
+		[array]$ConfigPath
 	)
-	
-	$VerbosePrefix = "Get-PwAsaObject:"
+    
+    # It's nice to be able to see what cmdlet is throwing output isn't it?
+    $VerbosePrefix = "Get-PwAsaObject:"
+    
+    # Check for path and import
+    if (Test-Path $ConfigPath) {
+        $LoopArray = Get-Content $ConfigPath
+    }
+
+    # Setup return Array
+    $ReturnArray = @()
 	
     $IpRx = [regex] "(\d+)\.(\d+)\.(\d+)\.(\d+)"
 	
@@ -18,9 +27,7 @@ function Get-PwAsaObject {
 	$i          = 0 
 	$StopWatch  = [System.Diagnostics.Stopwatch]::StartNew() # used by Write-Progress so it doesn't slow the whole function down
 	
-	$ReturnObject = @()
-	
-	:fileloop foreach ($line in $Config) {
+	:fileloop foreach ($entry in $LoopArray) {
 		$i++
 		
 		# Write progress bar, we're only updating every 1000ms, if we do it every line it takes forever
@@ -32,13 +39,13 @@ function Get-PwAsaObject {
 			$StopWatch.Start()
 		}
 		
-		if ($line -eq "") { continue }
+		if ($entry -eq "") { continue }
 		
 		###########################################################################################
 		# Check for the Section
 		
 		$Regex = [regex] "^object(?<group>-group)?\ (?<type>[^\ ]+?)\ (?<name>[^\ ]+)(\ (?<protocol>.+))?"
-		$Match = HelperEvalRegex $Regex $line
+		$Match = HelperEvalRegex $Regex $entry
 		if ($Match) {
             $KeepGoing = $true
             $Protocol  = $Match.Groups['protocol'].Value
@@ -64,19 +71,19 @@ function Get-PwAsaObject {
 
         #More prompts and blank lines
         $Regex = [regex] '^<'
-        $Match = HelperEvalRegex $Regex $line
+        $Match = HelperEvalRegex $Regex $entry
         if ($Match) {
             continue
         }
         $Regex = [regex] '^\s+$'
-        $Match = HelperEvalRegex $Regex $line
+        $Match = HelperEvalRegex $Regex $entry
         if ($Match) {
             continue
         }
         
         # End object
         $Regex = [regex] "^[^\ ]"
-		$Match = HelperEvalRegex $Regex $line
+		$Match = HelperEvalRegex $Regex $entry
         if ($Match) {
             $KeepGoing = $false
             $Protocol = $null
@@ -86,7 +93,7 @@ function Get-PwAsaObject {
         if ($KeepGoing) {
             # Special Properties
             $EvalParams = @{}
-            $EvalParams.StringToEval = $line
+            $EvalParams.StringToEval = $entry
             
             # subnet
             $EvalParams.Regex = [regex] "^\ subnet\ (?<network>$IpRx)\ (?<mask>$IpRx)"				
@@ -194,7 +201,7 @@ function Get-PwAsaObject {
                 switch ($Operator) {
                     "eq" {}
                     "none" {}
-                    "default" { Throw "$VerbosePrefix service-object operator `"$Operator`" not handled`r`n $line" }
+                    "default" { Throw "$VerbosePrefix service-object operator `"$Operator`" not handled`r`n $entry" }
                 }
                 
                 if ($Port) {
