@@ -63,9 +63,37 @@ function Resolve-PwSecurityPolicy {
                     }
                     { ($_ -eq 'Source') -or `
                       ($_ -eq 'Destination') } {
-                        $NewObject.$Property           = $value
-                        $NewObject."Resolved$Property" = $r
-                        $ReturnArray += $NewObject
+                        
+                        if ($ResolvedObjects.GetType().Name -eq 'SsExpression') {
+                            $ResolvedExpression = Resolve-PwObject -ObjectToResolve $r.Value -ObjectList $Objects
+                            foreach ($v in $ResolvedExpression) {
+                                $NewObject = [ResolvedSecurityPolicy]::new()
+                                
+                                # should convert this to a method on the ResolvedSecurityPolicy class
+                                foreach ($prop in $CopyProps) {
+                                    $NewObject.$prop = $entry.$prop
+                                }
+
+                                switch ($ResolvedObjects.Operator) {
+                                    'exclusion' {
+                                        $NewObject."$Property`Negate" = $true
+                                    }
+                                    default {
+                                        Throw "VerbosePrefix Expression Operator not handled: $($ResolvedObjects.Operator)"
+                                    }
+                                }
+                                
+                                $NewObject.$Property = $value
+                                $NewObject."Resolved$Property" = $v
+                                $ReturnArray                  += $NewObject
+                            }
+                        } else {
+                            $NewObject.$Property = $value
+                            $NewObject."Resolved$Property" = $r
+                            $ReturnArray                  += $NewObject
+                        }
+
+                        
                     }
                     default {
                         Throw "$VerbosePrefix Property not handled: $Property"
@@ -85,7 +113,6 @@ function Resolve-PwSecurityPolicy {
         
         # Update Progress Bar
         $i++
-        $global:testing = ($i / $Policy.Count / 3 * 100)
         $MainProgressParams.PercentComplete  = ($i / $Policy.Count / 3 * 100) + $StartingPercentComplete
         $MainProgressParams.CurrentOperation = "Rule $i / $($Policy.Count)"
         Write-Progress @MainProgressParams
@@ -117,25 +144,6 @@ function Resolve-PwSecurityPolicy {
     $i = 0
     # Services
     foreach ($entry in $DestinationResolved) {
-        <#Write-Verbose "$VerbosePrefix $($entry.Accesslist): $($entry.Number)"
-        $CopyProps = ($entry | Get-Member -MemberType property).name
-        
-        foreach ($value in $entry.Service) {
-            $ResolvedObjects = Resolve-PwObject -ObjectToResolve $value -ObjectList $ServiceObjects
-            foreach ($r in $ResolvedObjects) {
-                $NewObject = [ResolvedSecurityPolicy]::new()
-
-                foreach ($prop in $CopyProps) {
-                    $NewObject.$prop = $entry.$prop
-                }
-
-                $NewObject.Service         = $value
-                $NewObject.Protocol        = $r.Protocol
-                $NewObject.SourcePort      = $r.SourcePort
-                $NewObject.DestinationPort = $r.DestinationPort
-                $ServiceResolved += $NewObject
-            }
-        }#>
         $ServiceResolved += Resolve-Property -Policy $entry -Property Service -Objects $ServiceObjects
 
         # Update Progress Bar

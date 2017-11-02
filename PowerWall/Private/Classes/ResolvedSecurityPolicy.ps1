@@ -1,6 +1,7 @@
 Class ResolvedSecurityPolicy {
     [string]$AccessList
     [decimal]$Number
+    [string]$Name
     [string]$Action
     
     [string]$SourceInterface

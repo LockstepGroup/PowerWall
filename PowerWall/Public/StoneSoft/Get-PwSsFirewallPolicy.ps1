@@ -35,6 +35,7 @@ function Get-PwSsFirewallPolicy {
 
             $NewObject.AccessList = $AccessList
             $NewObject.Number     = $rule.rank
+            $NewObject.Name       = $rule.tag
             $NewObject.Comment    = $rule.comment
 
             # disabled

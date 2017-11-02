@@ -1,6 +1,7 @@
 Class SecurityRule {
     [string]$AccessList
     [decimal]$Number
+    [string]$Name
     [string]$Action
     
     [string]$SourceInterface
@@ -8,7 +9,7 @@ Class SecurityRule {
     
     [string[]]$Source
     [bool]$SourceNegate
-    
+
     [string[]]$Destination
     [bool]$DestinationNegate
     
