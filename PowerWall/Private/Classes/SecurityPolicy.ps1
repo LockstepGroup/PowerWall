@@ -1,5 +1,6 @@
-Class SecurityRule {
+Class SecurityPolicy {
     [string]$AccessList
+    [string]$AclType
     [decimal]$Number
     [string]$Name
     [string]$Action
@@ -24,7 +25,7 @@ Class SecurityRule {
     [string]$IcmpType
     [string]$Enabled
 
-    SecurityRule([string] $AclType) {
+    SecurityPolicy([string] $AclType) {
         switch ($AclType) {
             Asa {
                 $this.AccessList           = ""

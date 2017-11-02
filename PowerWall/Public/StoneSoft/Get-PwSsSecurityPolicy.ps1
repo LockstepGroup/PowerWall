@@ -1,4 +1,4 @@
-function Get-PwSsFirewallPolicy {
+function Get-PwSsSecurityPolicy {
     [CmdletBinding()]
     Param (
         [Parameter(Mandatory=$True,Position=0)]
@@ -6,7 +6,7 @@ function Get-PwSsFirewallPolicy {
     )
 
     # It's nice to be able to see what cmdlet is throwing output isn't it?
-    $VerbosePrefix = "Get-PwSsFirewallPolicy: "
+    $VerbosePrefix = "Get-PwSsSecurityPolicy: "
 
     # Check for path and import
     if (Test-Path $ExportedElementXml) {
@@ -18,19 +18,19 @@ function Get-PwSsFirewallPolicy {
 
     # Exported data should be xml
     $ExportedElements = [xml]$ExportedElements
-    $FirewallPolicy   = $ExportedElements.generic_import_export.fw_policy
+    $SecurityPolicy   = $ExportedElements.generic_import_export.fw_policy
 
     # This makes it easier to write new cmdlets
     $LoopArray  = @()
-    $LoopArray += $FirewallPolicy
+    $LoopArray += $SecurityPolicy
 
     # Process data
     foreach ($entry in $LoopArray) {
         $AccessList = $entry.name
         foreach ($rule in $entry.access_entry.rule_entry) {
-            $global:testing = $entry
+            
             # Initialize the object
-            $NewObject    = [SecurityRule]::new("")
+            $NewObject    = [SecurityPolicy]::new("")
             $ReturnArray += $NewObject
 
             $NewObject.AccessList = $AccessList
