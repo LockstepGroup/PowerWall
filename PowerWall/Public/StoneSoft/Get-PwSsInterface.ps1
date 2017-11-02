@@ -30,6 +30,9 @@ function Get-PwSsInterface {
     # This makes it easier to write new cmdlets
     $LoopArray = @()
     $LoopArray += $Clusters
+
+    # Regular Expression
+    $SubnetRx = [regex] '\/(\d{1,2})'
     
     
     # Start looking for stuff
@@ -53,7 +56,8 @@ function Get-PwSsInterface {
             $PhysicalLookup = $ReturnArray | Where-Object { $_.Name -eq $Id }
 
             $PhysicalLookup.Name      = $virtualInterface.name
-            $PhysicalLookup.IpAddress = $virtualInterface.network_value
+            $PhysicalLookup.IpAddress = $virtualInterface.mvia_address.address
+            $PhysicalLookup.IpAddress += $SubnetRx.Match($virtualInterface.network_value).Value
         }
         
     }
