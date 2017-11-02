@@ -45,7 +45,7 @@ function Get-PwSsInterface {
             $NewObject    = [Interface]::new()
             $ReturnArray += $NewObject
 
-            $NewObject.Name       = $physicalInterface.interface_id
+            $NewObject.Id         = $physicalInterface.interface_id
             $NewObject.MacAddress = $physicalInterface.macaddress
         }
 
@@ -53,7 +53,7 @@ function Get-PwSsInterface {
         foreach ($virtualInterface in $entry.cluster_virtual_interface) {
 
             $Id = $virtualInterface.nicid
-            $PhysicalLookup = $ReturnArray | Where-Object { $_.Name -eq $Id }
+            $PhysicalLookup = $ReturnArray | Where-Object { $_.Id -eq $Id }
 
             $PhysicalLookup.Name      = $virtualInterface.name
             $PhysicalLookup.IpAddress = $virtualInterface.mvia_address.address

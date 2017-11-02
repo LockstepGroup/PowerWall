@@ -3,4 +3,5 @@ Class Interface {
     [string]$Comment
     [string]$IpAddress
     [string]$MacAddress
+    [string]$Id
 }
