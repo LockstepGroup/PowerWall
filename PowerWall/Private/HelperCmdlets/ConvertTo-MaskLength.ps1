@@ -51,7 +51,7 @@ function ConvertTo-MaskLength {
         if ($IsValid) {
             $Bits = "$( $SubnetMask.GetAddressBytes() | ForEach-Object { [Convert]::ToString($_, 2) } )" -Replace '[\s0]'
         } else {
-            Throw "Not a valid Subnet Mask"
+            Throw "Not a valid Subnet Mask $SubnetMask"
         }
         Return $Bits.Length#>
     }

@@ -17,10 +17,11 @@ function Resolve-PwObject {
         Write-Verbose "$VerbosePrefix Looking up $object"
         $Lookup = $ObjectList | Where-Object { $_.Name -ceq $object }
         if ($Lookup) {
+            Write-Verbose "$VerbosePrefix Object Found"
             switch ($Lookup.GetType().Name) {
                 'ServiceObject' {
-                    if ($Lookup.Members) {
-                        $ReturnArray += Resolve-PwObject -ObjectToResolve $Lookup.Members -ObjectList $ObjectList
+                    if ($Lookup.Member) {
+                        $ReturnArray += Resolve-PwObject -ObjectToResolve $Lookup.Member -ObjectList $ObjectList
                     } else {
                         $New = "" | Select-Object Protocol,SourcePort,DestinationPort
 
@@ -40,7 +41,8 @@ function Resolve-PwObject {
                     }
                 }
                 'NetworkObject' {
-                    foreach ($value in $Lookup.Value) {
+                    Write-Verbose "$VerbosePrefix Object is NetworkObject with $($Lookup.Member.Count) members"
+                    foreach ($value in $Lookup.Member) {
                         if ($value -ceq $object) {
                             $ReturnArray += $value
                         } else {

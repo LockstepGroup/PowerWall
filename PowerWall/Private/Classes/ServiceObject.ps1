@@ -5,5 +5,5 @@ Class ServiceObject {
     [string]$Protocol
     [string[]]$SourcePort
     [string[]]$DestinationPort
-    [string[]]$Members
+    [string[]]$Member
 }

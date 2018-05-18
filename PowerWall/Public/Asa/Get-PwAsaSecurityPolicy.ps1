@@ -12,6 +12,8 @@ function Get-PwAsaSecurityPolicy {
     
     # It's nice to be able to see what cmdlet is throwing output isn't it?
     $VerbosePrefix = "Get-PwAsaSecurityPolicy:"
+
+    Write-Verbose "$VerbosePrefix Getting rules from $ConfigPath"
     
     # Check for path and import
     if (Test-Path $ConfigPath) {
@@ -24,7 +26,7 @@ function Get-PwAsaSecurityPolicy {
     $IpRx = [regex] "(\d+)\.(\d+)\.(\d+)\.(\d+)"
 	$n = 1
     
-	$TotalLines = $Config.Count
+	$TotalLines = $LoopArray.Count
 	$i          = 0 
 	$StopWatch  = [System.Diagnostics.Stopwatch]::StartNew() # used by Write-Progress so it doesn't slow the whole function down
 	
@@ -81,12 +83,15 @@ function Get-PwAsaSecurityPolicy {
                     )?
                     
                     # flags
+                    (?<log>\ log\ (?<loglevel>\w+))?
                     (?<inactive>\ inactive)?
                 |
                     (?<type>standard)\ 
                     (?<action>[^\ ]+?)\ 
-                    (?<srcnetwork>[^\ ]+?)\ 
-                    (?<srcmask>[^\ ]+)
+                    (
+                        ((?<srcnetwork>$IpRx)\ (?<srcmask>$IpRx))|
+                        ((?<srctype>host|object-group|object)\ )?(?<source>[^\ ]+)
+                    )
                 )
             )
         "
@@ -94,25 +99,38 @@ function Get-PwAsaSecurityPolicy {
 		if ($Match) {
             if ($Match.Groups['remark'].Success) {
                 $Remark            = $Match.Groups['remark'].Value
-                $NewObject.Comment = $Remark
-                Write-Verbose "$VerbosePrefix $Remark"
+                #$NewObject.Comment = $Remark
+                Write-Verbose "$VerbosePrefix Adding remark: $Remark"
                 continue
             } else {
-                $NewObject    = [SecurityPolicy]::new("") 
-            }
-            
-            $NewObject.AccessList = $Match.Groups['aclname'].Value
-            $NewObject.AclType    = $Match.Groups['type'].Value
-            
-            $CheckForAcl = $ReturnArray | Where-Object { $_.AccessList -eq $NewObject.AccessList }
-            if ($CheckForAcl) {
-                $n++
-            } else {
-                $n = 1
-            }
+                $NewObject    = [SecurityPolicy]::new("")
+                if ($Remark) {
+                    $NewObject.Comment = $Remark
+                    $Remark = $null
+                }
 
-            $ReturnArray += $NewObject
-            $NewObject.Number = $n
+                $NewObject.AccessList = $Match.Groups['aclname'].Value
+                $NewObject.AclType    = $Match.Groups['type'].Value
+                
+                # See if we need to increment the sequence number
+                $CheckForAcl = $ReturnArray | Where-Object { $_.AccessList -eq $NewObject.AccessList }
+                if ($CheckForAcl) {
+                    $n++
+                } else {
+                    $n = 1
+                }
+
+                $ReturnArray += $NewObject
+                $NewObject.Number = $n
+
+                Write-Verbose "$VerbosePrefix Creating new SecurityPolicy: $($NewObject.AccessList):$($NewObject.AclType):$n"
+            }
+            
+            
+            
+            
+
+            
             $NewObject.Action = $Match.Groups['action'].Value
             #$NewObject.ProtocolType = $Match.Groups['prottype'].Value
             $NewObject.Protocol = $Match.Groups['protocol'].Value
@@ -120,8 +138,10 @@ function Get-PwAsaSecurityPolicy {
             # Source
             if ($Match.Groups['srcnetwork'].Success) {
                 $Source = $Match.Groups['srcnetwork'].Value
-                $Source += '/'
-                $Source += ConvertTo-MaskLength $Match.Groups['srcmask'].Value
+                if ($Match.Groups['srcmask'].Success) {
+                    $Source += '/'
+                    $Source += ConvertTo-MaskLength $Match.Groups['srcmask'].Value
+                }
                 $NewObject.Source = $Source
             } else {
                 #$NewObject.SourceType = $Match.Groups['srctype'].Value
@@ -131,8 +151,10 @@ function Get-PwAsaSecurityPolicy {
             # Destination
             if ($Match.Groups['dstnetwork'].Success) {
                 $Destination = $Match.Groups['dstnetwork'].Value
-                $Destination += '/'
-                $Destination += ConvertTo-MaskLength $Match.Groups['dstmask'].Value
+                if ($Match.Groups['dstmask'].Success) {
+                    $Destination += '/'
+                    $Destination += ConvertTo-MaskLength $Match.Groups['dstmask'].Value
+                }
                 $NewObject.Destination = $Destination
             } else {
                 #$NewObject.DestinationType = $Match.Groups['dsttype'].Value
