@@ -1,5 +1,6 @@
 Class ResolvedSecurityPolicy {
     [string]$AccessList
+    [string]$AclType
     [decimal]$Number
     [string]$Name
     [string]$Action

@@ -85,8 +85,8 @@ function Get-PwAsaSecurityPolicy {
                 |
                     (?<type>standard)\ 
                     (?<action>[^\ ]+?)\ 
-                    (?<sourcetype>[^\ ]+?)\ 
-                    (?<source>[^\ ]+)
+                    (?<srcnetwork>[^\ ]+?)\ 
+                    (?<srcmask>[^\ ]+)
                 )
             )
         "
@@ -98,15 +98,20 @@ function Get-PwAsaSecurityPolicy {
                 Write-Verbose "$VerbosePrefix $Remark"
                 continue
             } else {
-                $NewObject    = [SecurityPolicy]::new("")
-                $global:testing = $NewObject
-                $ReturnArray += $NewObject                
+                $NewObject    = [SecurityPolicy]::new("") 
             }
             
             $NewObject.AccessList = $Match.Groups['aclname'].Value
             $NewObject.AclType    = $Match.Groups['type'].Value
             
-            
+            $CheckForAcl = $ReturnArray | Where-Object { $_.AccessList -eq $NewObject.AccessList }
+            if ($CheckForAcl) {
+                $n++
+            } else {
+                $n = 1
+            }
+
+            $ReturnArray += $NewObject
             $NewObject.Number = $n
             $NewObject.Action = $Match.Groups['action'].Value
             #$NewObject.ProtocolType = $Match.Groups['prottype'].Value

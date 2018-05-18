@@ -23,7 +23,7 @@ function Get-PwAsaObject {
 	
     $IpRx = [regex] "(\d+)\.(\d+)\.(\d+)\.(\d+)"
 	
-	$TotalLines = $Config.Count
+	$TotalLines = $LoopArray.Count
 	$i          = 0 
 	$StopWatch  = [System.Diagnostics.Stopwatch]::StartNew() # used by Write-Progress so it doesn't slow the whole function down
 	
@@ -45,24 +45,45 @@ function Get-PwAsaObject {
 		# Check for the Section
 		
 		$Regex = [regex] "^object(?<group>-group)?\ (?<type>[^\ ]+?)\ (?<name>[^\ ]+)(\ (?<protocol>.+))?"
-		$Match = HelperEvalRegex $Regex $entry
+		$Match = Get-RegexMatch $Regex $entry
 		if ($Match) {
             $KeepGoing = $true
             $Protocol  = $Match.Groups['protocol'].Value
             
-            $Lookup = $ReturnObject | Where-Object {$_.Name -ceq $Match.Groups['name'].Value }
+            # Duplicate name entries can exist for object NAT
+            $Lookup = $ReturnArray | Where-Object { $_.Name -ceq $Match.Groups['name'].Value }
+            
             if ($Lookup) {
+                Write-Verbose "$VerbosePrefix Duplicate Found $($Lookup.Count)"
                 $NewObject = $Lookup
             } else {
-                $NewObject      = New-Object AsaParser.Object
+                $ObjectType = $Match.Groups['type'].Value
+                switch ($ObjectType) {
+                    'network' {
+                        $NewObject = [NetworkObject]::new()
+                        break
+                    }
+
+                    'service' {
+                        $NewObject = [ServiceObject]::new()
+                        break
+                    }
+
+                    default {
+                        Throw "$VerbosePrefix ObjectType not handled: $ObjectType"
+                    }
+                }
+                $ReturnArray += $NewObject
+
+                #$NewObject      = New-Object AsaParser.Object
                 $NewObject.Name = $Match.Groups['name'].Value
-                $NewObject.Type = $Match.Groups['type'].Value
+                #$NewObject.Type = $Match.Groups['type'].Value
                 
+                <#
                 if ($Match.Groups['group'].Success) {
                     $NewObject.IsGroup = $true
                 }
-                
-                $ReturnObject    += $NewObject
+                #>
             }
 
             Write-Verbose "$VerbosePrefix found object $($NewObject.Name)"
@@ -71,19 +92,19 @@ function Get-PwAsaObject {
 
         #More prompts and blank lines
         $Regex = [regex] '^<'
-        $Match = HelperEvalRegex $Regex $entry
+        $Match = Get-RegexMatch $Regex $entry
         if ($Match) {
             continue
         }
         $Regex = [regex] '^\s+$'
-        $Match = HelperEvalRegex $Regex $entry
+        $Match = Get-RegexMatch $Regex $entry
         if ($Match) {
             continue
         }
         
         # End object
         $Regex = [regex] "^[^\ ]"
-		$Match = HelperEvalRegex $Regex $entry
+		$Match = Get-RegexMatch $Regex $entry
         if ($Match) {
             $KeepGoing = $false
             $Protocol = $null
@@ -97,7 +118,7 @@ function Get-PwAsaObject {
             
             # subnet
             $EvalParams.Regex = [regex] "^\ subnet\ (?<network>$IpRx)\ (?<mask>$IpRx)"				
-            $Eval             = HelperEvalRegex @EvalParams
+            $Eval             = Get-RegexMatch @EvalParams
             if ($Eval) {
                 $Mask = ConvertTo-MaskLength $Eval.Groups['mask'].Value
                 $NewObject.Value += $Eval.Groups['network'].Value + '/' + $Mask
@@ -105,14 +126,14 @@ function Get-PwAsaObject {
             
             # host
             $EvalParams.Regex = [regex] "^\ host\ (?<network>$IpRx)"				
-            $Eval             = HelperEvalRegex @EvalParams
+            $Eval             = Get-RegexMatch @EvalParams
             if ($Eval) {
                 $NewObject.Value += $Eval.Groups['network'].Value + '/32'
             }
             
             # network-object
             $EvalParams.Regex = [regex] "^\ network-object\ (?<param1>$IpRx|host|object)\ (?<param2>.+)"				
-            $Eval             = HelperEvalRegex @EvalParams
+            $Eval             = Get-RegexMatch @EvalParams
             if ($Eval) {
                 $Param1 = $Eval.Groups['param1'].Value
                 switch ($Param1) {
@@ -131,7 +152,7 @@ function Get-PwAsaObject {
             
             # port-object
             $EvalParams.Regex = [regex] "^\ port-object\ (?<operator>[^\ ]+?)\ (?<port>[^\ ]+)(\ (?<endport>.+))?"				
-            $Eval             = HelperEvalRegex @EvalParams
+            $Eval             = Get-RegexMatch @EvalParams
             if ($Eval) {
                 $Operator = $Eval.Groups['operator'].Value
                 $Port = HelperResolveBuiltinService $Eval.Groups['port'].Value
@@ -149,29 +170,30 @@ function Get-PwAsaObject {
             
             # group-object or protocol-object
             $EvalParams.Regex = [regex] "^\ (group|protocol)-object\ (.+)"				
-            $Eval             = HelperEvalRegex @EvalParams -ReturnGroupNum 2
+            $Eval             = Get-RegexMatch @EvalParams -ReturnGroupNum 2
             if ($Eval) {
                 $NewObject.Value += $Eval
             }
             
             # icmp-object
             $EvalParams.Regex = [regex] "^\ icmp-object\ (.+)"				
-            $Eval             = HelperEvalRegex @EvalParams -ReturnGroupNum 1
+            $Eval             = Get-RegexMatch @EvalParams -ReturnGroupNum 1
             if ($Eval) {
                 $NewObject.Value += "icmp/" + $Eval
             }
             
             # range
             $EvalParams.Regex = [regex] "^\ range\ (?<start>$IpRx)\ (?<stop>$IpRx)"				
-            $Eval             = HelperEvalRegex @EvalParams
+            $Eval             = Get-RegexMatch @EvalParams
             if ($Eval) {
                 $NewObject.Value += $Eval.Groups['start'].Value + "-" + $Eval.Groups['stop'].Value
             }
 
             # object nat
             $EvalParams.Regex = [regex] "^\ nat\ \((?<srcint>.+?)\,(?<dstint>.+?)\)\ (?<type>static|dynamic(\ pat-pool)?)\ (?<nat>[^\ ]+)"
-            $Eval             = HelperEvalRegex @EvalParams
+            $Eval             = Get-RegexMatch @EvalParams
             if ($Eval) {
+                $global:testing = $NewObject
                 $NewObject.NatSourceInterface      = $Eval.Groups['srcint'].Value
                 $NewObject.NatDestinationInterface = $Eval.Groups['dstint'].Value
                 $NewObject.NatType                 = $Eval.Groups['type'].Value
@@ -181,14 +203,14 @@ function Get-PwAsaObject {
             
             # service-object
             $EvalParams.Regex = [regex] "^\ service-object\ (?<protocol>[^\ ]+)(\ (destination\ (?<operator>[^\ ]+)\ (?<port>[^\ ]+)|(?<port>[^\ ]+)))?"				
-            $Eval             = HelperEvalRegex @EvalParams
+            $Eval             = Get-RegexMatch @EvalParams
             if ($Eval) {
                 $Protocol = $Eval.Groups['protocol'].Value
                 $Port     = $Eval.Groups['port'].Value
                 
                 if ($Eval.Groups['port'].Success) {
                     if ($Protocol -ne "icmp") {
-                        $Port = HelperResolveBuiltinService $Port
+                        $Port = Resolve-BuiltinService -Service $Port -FirewallType 'asa'
                     }
                 }
                 
@@ -209,7 +231,21 @@ function Get-PwAsaObject {
                 } else {
                     $FullPort = $Protocol
                 }
-                $NewObject.Value += $FullPort
+                $NewObject.Members += $FullPort
+            }
+
+            # service
+            $EvalParams.Regex = [regex] '^\ service\ (?<protocol>[^\ ]+)\ source\ (?<srcoperator>[^\ ]+)\ (?<sourceport>[^\ ]+)\ destination\ (?<dstoperator>[^\ ]+)\ (?<dstport>[^\ ]+)'
+            $Eval             = Get-RegexMatch @EvalParams
+            if ($Eval) {
+                $Protocol            = $Eval.Groups['protocol'].Value
+                $SourceOperator      = $Eval.Groups['srcoperator'].Value
+                $SourcePort          = $Eval.Groups['sourceport'].Value
+                $DestinationOperator = $Eval.Groups['dstoperator'].Value
+                $DestinationPort     = $Eval.Groups['dstport'].Value
+
+                $NewObject.SourcePort      = $Protocol + '/' + (Resolve-BuiltinService $SourcePort asa)
+                $NewObject.DestinationPort = $Protocol + '/' + (Resolve-BuiltinService $DestinationPort asa)
             }
             
             ##################################
@@ -219,10 +255,10 @@ function Get-PwAsaObject {
             $EvalParams.LoopName         = 'fileloop'
             
             # Description
-            $EvalParams.ObjectProperty = "Description"
+            $EvalParams.ObjectProperty = "Comment"
             $EvalParams.Regex          = [regex] '^\ +description\ (.+)'				
-            $Eval                      = HelperEvalRegex @EvalParams
+            $Eval                      = Get-RegexMatch @EvalParams
         }
 	}	
-	return $ReturnObject
+	return $ReturnArray
 }

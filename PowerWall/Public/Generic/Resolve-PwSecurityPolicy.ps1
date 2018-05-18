@@ -109,7 +109,12 @@ function Resolve-PwSecurityPolicy {
     $i = 0
     # Sources
     foreach ($entry in $Policy) {
-        $SourceResolved += Resolve-Property -Policy $entry -Property Source -Objects $NetworkObjects
+        Write-Verbose "$VerbosePrefix Source: Entry: $($entry.AccessList): $($entry.Number)"
+        try {
+            $SourceResolved += Resolve-Property -Policy $entry -Property Source -Objects $NetworkObjects -ErrorAction Stop
+        } catch {
+            Throw "$VerbosePrefix Source: Entry: $($entry.AccessList): $($entry.Number)"
+        }
         
         # Update Progress Bar
         $i++
@@ -127,6 +132,10 @@ function Resolve-PwSecurityPolicy {
     $i = 0
     # Destinations
     foreach ($entry in $SourceResolved) {
+        if ($entry.Destination[0] -eq "") {
+            $entry.Destination = '0.0.0.0/0'
+        }
+        Write-Verbose "$VerbosePrefix Destination: Entry: $($entry.AccessList): $($entry.Number)"
         $DestinationResolved += Resolve-Property -Policy $entry -Property Destination -Objects $NetworkObjects
 
         # Update Progress Bar
@@ -144,6 +153,10 @@ function Resolve-PwSecurityPolicy {
     $i = 0
     # Services
     foreach ($entry in $DestinationResolved) {
+        if ($entry.Service[0] -eq "") {
+            $entry.Service = 'any'
+        }
+        Write-Verbose "$VerbosePrefix Service: Entry: $($entry.AccessList): $($entry.Number)"
         $ServiceResolved += Resolve-Property -Policy $entry -Property Service -Objects $ServiceObjects
 
         # Update Progress Bar
