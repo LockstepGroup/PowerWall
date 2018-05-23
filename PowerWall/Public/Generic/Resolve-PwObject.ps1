@@ -5,7 +5,10 @@ function Resolve-PwObject {
         [string[]]$ObjectToResolve,
 
         [Parameter(Mandatory=$True,Position=1)]
-        [array]$ObjectList
+        [array]$ObjectList,
+
+        [Parameter(Mandatory=$False)]
+        [String]$FirewallType
     )
 
     # It's nice to be able to see what cmdlet is throwing output isn't it?
@@ -17,10 +20,11 @@ function Resolve-PwObject {
         Write-Verbose "$VerbosePrefix Looking up $object"
         $Lookup = $ObjectList | Where-Object { $_.Name -ceq $object }
         if ($Lookup) {
-            Write-Verbose "$VerbosePrefix Object Found"
+            Write-Verbose "$VerbosePrefix Object Found with type: $($Lookup.GetType().Name)"
             switch ($Lookup.GetType().Name) {
                 'ServiceObject' {
                     if ($Lookup.Member) {
+                        Write-Verbose "$VerbosePrefix Looking up $($Lookup.Member.Count) members"
                         $ReturnArray += Resolve-PwObject -ObjectToResolve $Lookup.Member -ObjectList $ObjectList
                     } else {
                         $New = "" | Select-Object Protocol,SourcePort,DestinationPort
@@ -60,7 +64,38 @@ function Resolve-PwObject {
             }
             
         } else {
-            $ReturnArray += $object
+            Write-Verbose "$VerbosePrefix Object not found"
+            if ($object -ne 'any') {
+                $ServiceRx = [regex] '^(?<protocol>\w+(-\w+)?)\/(?<port>\d+(-\d+)?)$'
+                $ServiceMatch = $ServiceRx.Match($object)
+                if (!($ServiceMatch.Success)) {
+                    if ($FirewallType) {
+                        Write-Verbose "$VerbosePrefix FirewallType Specified: $FirewallType"
+                        switch ($FirewallType) {
+                            'asa' {
+                                $object = Resolve-BuiltinService -Service $object -FirewallType $FirewallType
+                                Write-Verbose "$VerbosePrefix Resolved BuiltinService: $object"
+                                $object = "builtin/" + $object
+                            }
+                            $null {}
+                            'default' {
+                                Throw "$VerbosePrefix FirewallType not handled: $FirewallType"
+                            }
+                        }
+                    }
+                }
+                $ServiceMatch = $ServiceRx.Match($object)
+                if ($ServiceMatch.Success) {
+                    $New                 = "" | Select-Object Protocol,SourcePort,DestinationPort
+                    $New.Protocol        = $ServiceMatch.Groups['protocol'].Value
+                    $New.DestinationPort = $ServiceMatch.Groups['port'].Value
+                    $ReturnArray += $New
+                } else {
+                    $ReturnArray += $object
+                }
+            } else {
+                $ReturnArray += $object
+            }
         }
     }
 

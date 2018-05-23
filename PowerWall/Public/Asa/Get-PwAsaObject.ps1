@@ -109,9 +109,16 @@ function Get-PwAsaObject {
             # Special Properties
             $EvalParams = @{}
             $EvalParams.StringToEval = $entry
+
+            # fqdn
+            $EvalParams.Regex = [regex] "^\ fqdn\ v4\ (?<fqdn>.+)"
+            $Eval             = Get-RegexMatch @EvalParams
+            if ($Eval) {
+                $NewObject.Member += $Eval.Groups['fqdn'].Value
+            }
             
             # subnet
-            $EvalParams.Regex = [regex] "^\ subnet\ (?<network>$IpRx)\ (?<mask>$IpRx)"				
+            $EvalParams.Regex = [regex] "^\ subnet\ (?<network>$IpRx)\ (?<mask>$IpRx)"
             $Eval             = Get-RegexMatch @EvalParams
             if ($Eval) {
                 $Mask = ConvertTo-MaskLength $Eval.Groups['mask'].Value
@@ -119,14 +126,14 @@ function Get-PwAsaObject {
             }
             
             # host
-            $EvalParams.Regex = [regex] "^\ host\ (?<network>$IpRx)"				
+            $EvalParams.Regex = [regex] "^\ host\ (?<network>$IpRx)"
             $Eval             = Get-RegexMatch @EvalParams
             if ($Eval) {
                 $NewObject.Member += $Eval.Groups['network'].Value + '/32'
             }
             
             # network-object
-            $EvalParams.Regex = [regex] "^\ network-object\ (?<param1>$IpRx|host|object)\ (?<param2>.+)"				
+            $EvalParams.Regex = [regex] "^\ network-object\ (?<param1>$IpRx|host|object)\ (?<param2>.+)"
             $Eval             = Get-RegexMatch @EvalParams
             if ($Eval) {
                 $Param1 = $Eval.Groups['param1'].Value
@@ -145,7 +152,7 @@ function Get-PwAsaObject {
             }
             
             # port-object
-            $EvalParams.Regex = [regex] "^\ port-object\ (?<operator>[^\ ]+?)\ (?<port>[^\ ]+)(\ (?<endport>.+))?"				
+            $EvalParams.Regex = [regex] "^\ port-object\ (?<operator>[^\ ]+?)\ (?<port>[^\ ]+)(\ (?<endport>.+))?"
             $Eval             = Get-RegexMatch @EvalParams
             if ($Eval) {
                 $Operator = $Eval.Groups['operator'].Value
@@ -163,21 +170,21 @@ function Get-PwAsaObject {
             }
             
             # group-object or protocol-object
-            $EvalParams.Regex = [regex] "^\ (group|protocol)-object\ (.+)"				
+            $EvalParams.Regex = [regex] "^\ (group|protocol)-object\ (.+)"
             $Eval             = Get-RegexMatch @EvalParams -ReturnGroupNum 2
             if ($Eval) {
                 $NewObject.Member += $Eval
             }
             
             # icmp-object
-            $EvalParams.Regex = [regex] "^\ icmp-object\ (.+)"				
+            $EvalParams.Regex = [regex] "^\ icmp-object\ (.+)"
             $Eval             = Get-RegexMatch @EvalParams -ReturnGroupNum 1
             if ($Eval) {
                 $NewObject.Member += "icmp/" + $Eval
             }
             
             # range
-            $EvalParams.Regex = [regex] "^\ range\ (?<start>$IpRx)\ (?<stop>$IpRx)"				
+            $EvalParams.Regex = [regex] "^\ range\ (?<start>$IpRx)\ (?<stop>$IpRx)"
             $Eval             = Get-RegexMatch @EvalParams
             if ($Eval) {
                 $NewObject.Member += $Eval.Groups['start'].Value + "-" + $Eval.Groups['stop'].Value
@@ -258,7 +265,7 @@ function Get-PwAsaObject {
             
             # Description
             $EvalParams.ObjectProperty = "Comment"
-            $EvalParams.Regex          = [regex] '^\ +description\ (.+)'				
+            $EvalParams.Regex          = [regex] '^\ +description\ (.+)'
             $Eval                      = Get-RegexMatch @EvalParams
         }
 	}	

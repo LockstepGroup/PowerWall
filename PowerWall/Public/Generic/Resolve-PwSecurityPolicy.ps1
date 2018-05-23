@@ -8,7 +8,10 @@ function Resolve-PwSecurityPolicy {
         [array]$NetworkObjects,
 
         [Parameter(Mandatory=$True,Position=2)]
-        [array]$ServiceObjects
+        [array]$ServiceObjects,
+
+        [Parameter(Mandatory=$False)]
+        [String]$FirewallType
     )
 
     # It's nice to be able to see what cmdlet is throwing output isn't it?
@@ -44,7 +47,11 @@ function Resolve-PwSecurityPolicy {
         $CopyProps = ($Policy | Get-Member -MemberType property).name
 
         foreach ($value in $Policy.$Property) {
-            $ResolvedObjects = Resolve-PwObject -ObjectToResolve $value -ObjectList $Objects
+            if ($Property -eq "Service") {
+                $ResolvedObjects = Resolve-PwObject -ObjectToResolve $value -ObjectList $Objects -FirewallType:$FirewallType
+            } else {
+                $ResolvedObjects = Resolve-PwObject -ObjectToResolve $value -ObjectList $Objects
+            }
             foreach ($r in $ResolvedObjects) {
                 $NewObject = [ResolvedSecurityPolicy]::new()
                 
@@ -113,6 +120,7 @@ function Resolve-PwSecurityPolicy {
         try {
             $SourceResolved += Resolve-Property -Policy $entry -Property Source -Objects $NetworkObjects -ErrorAction Stop
         } catch {
+            Throw $_
             Throw "$VerbosePrefix Source: Entry: $($entry.AccessList): $($entry.Number)"
         }
         

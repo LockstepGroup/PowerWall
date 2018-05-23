@@ -61,6 +61,7 @@ function Resolve-BuiltinService {
         "radius"            = "1645"
         "radius-acct"       = "1646"
         "rip"               = "520"
+        "rtsp"              = "554"
         "secureid-udp"      = "5510"
         "sip"               = "5060"
         "smtp"              = "25"

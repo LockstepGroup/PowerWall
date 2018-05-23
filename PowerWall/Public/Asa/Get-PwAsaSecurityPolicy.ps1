@@ -161,11 +161,14 @@ function Get-PwAsaSecurityPolicy {
                 $NewObject.Destination = $Match.Groups['destination'].Value
             }
 
-            #$NewObject.ServiceType = $Match.Groups['svctype'].Value
-            $NewObject.Service = $Match.Groups['service'].Value
-            
             if ($Match.Groups['inactive'].Value) {
                 $NewObject.Enabled = $false
+            }
+
+            #Service
+            $NewObject.Service = $Match.Groups['service'].Value
+            if ($NewObject.Service -match "\d+\ \d+") {
+                $NewObject.Service = $NewObject.Protocol +'/' + ($NewObject.Service -replace ' ','-')
             }
             
 			continue
