@@ -75,7 +75,7 @@ function Resolve-PwObject {
                             'asa' {
                                 $object = Resolve-BuiltinService -Service $object -FirewallType $FirewallType
                                 Write-Verbose "$VerbosePrefix Resolved BuiltinService: $object"
-                                $object = "builtin/" + $object
+                                #$object = "builtin/" + $object
                             }
                             $null {}
                             'default' {

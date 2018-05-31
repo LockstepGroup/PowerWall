@@ -63,9 +63,18 @@ function Resolve-PwSecurityPolicy {
                 switch ($Property) {
                     'Service' {
                         $NewObject.Service         = $value
-                        $NewObject.Protocol        = $r.Protocol
+                        if ($r.Protocol) {
+                            $NewObject.Protocol        = $r.Protocol
+                        } else {
+                            # pull protocol from original acl entry if there isn't one on the resovled service
+                            $NewObject.Protocol        = $entry.Protocol
+                        }
                         $NewObject.SourcePort      = $r.SourcePort
-                        $NewObject.DestinationPort = $r.DestinationPort
+                        if ($r.DestinationPort) {
+                            $NewObject.DestinationPort = $r.DestinationPort
+                        } else {
+                            $NewObject.DestinationPort = $r
+                        }
                         $ReturnArray += $NewObject
                     }
                     { ($_ -eq 'Source') -or `

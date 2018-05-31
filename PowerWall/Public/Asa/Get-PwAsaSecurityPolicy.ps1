@@ -62,7 +62,7 @@ function Get-PwAsaSecurityPolicy {
                     (?<action>[^\ ]+?)
                     
                     # protocol
-                    \ ((?<prottype>object-group)\ )?(?<protocol>[^\ ]+?)
+                    \ ((?<prottype>object-group|object)\ )?(?<protocol>[^\ ]+?)
                     
                     # source
                     (
@@ -73,7 +73,7 @@ function Get-PwAsaSecurityPolicy {
                     # destination
                     (
                         \ ((?<dstnetwork>$IpRx)\ (?<dstmask>$IpRx))|
-                        \ ((?<dsttype>host|object-group|object)\ )?(?<destination>[^\ ]+)
+                        \ ((?<dsttype>host|object-group|object|interface)\ )?(?<destination>[^\ ]+)
                     )
                     # service
                     (
@@ -132,7 +132,6 @@ function Get-PwAsaSecurityPolicy {
 
             
             $NewObject.Action = $Match.Groups['action'].Value
-            #$NewObject.ProtocolType = $Match.Groups['prottype'].Value
             $NewObject.Protocol = $Match.Groups['protocol'].Value
 
             # Source
@@ -166,9 +165,14 @@ function Get-PwAsaSecurityPolicy {
             }
 
             #Service
+            $ProtocolType = $Match.Groups['prottype'].Value
             $NewObject.Service = $Match.Groups['service'].Value
-            if ($NewObject.Service -match "\d+\ \d+") {
-                $NewObject.Service = $NewObject.Protocol +'/' + ($NewObject.Service -replace ' ','-')
+            if ($ProtocolType -match 'object') {
+                $NewObject.Service = $NewObject.Protocol
+            } else {
+                if ($NewObject.Service -match "\d+\ \d+") {
+                    $NewObject.Service = $NewObject.Protocol +'/' + ($NewObject.Service -replace ' ','-')
+                }
             }
             
 			continue

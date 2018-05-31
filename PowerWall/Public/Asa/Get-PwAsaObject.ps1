@@ -206,12 +206,18 @@ function Get-PwAsaObject {
             $EvalParams.Regex = [regex] "^\ service-object\ (?<protocol>[^\ ]+)(\ (destination\ (?<operator>[^\ ]+)\ (?<port>[^\ ]+)|(?<port>[^\ ]+)))?"
             $Eval             = Get-RegexMatch @EvalParams
             if ($Eval) {
+                Write-Verbose "$VerbosePrefix Found: $($Eval.Value)"
                 $Protocol = $Eval.Groups['protocol'].Value
                 $Port     = $Eval.Groups['port'].Value
                 
                 switch ($Protocol) {
                     'object' {
                         $NewObject.Member += $Port
+                        continue fileloop
+                    }
+                    'icmp' {
+                        Write-Verbose "$VerbosePrefix protocol is icmp, setting port to 0"
+                        $Port = "0"
                         continue
                     }
                     default {
@@ -225,7 +231,9 @@ function Get-PwAsaObject {
                 
                 if ($Eval.Groups['operator'].Success) {
                     $Operator = $Eval.Groups['operator'].Value
+                    Write-Verbose "$VerbosePrefix operator found: $Operator"
                 } else {
+                    Write-Verbose "$VerbosePrefix no operator found, setting to none"
                     $Operator = "none"
                 }
                 
@@ -244,7 +252,7 @@ function Get-PwAsaObject {
             }
 
             # service
-            $EvalParams.Regex = [regex] '^\ service\ (?<protocol>[^\ ]+)\ source\ (?<srcoperator>[^\ ]+)\ (?<sourceport>[^\ ]+)\ destination\ (?<dstoperator>[^\ ]+)\ (?<dstport>[^\ ]+)'
+            $EvalParams.Regex = [regex] '^\ service\ (?<protocol>[^\ ]+)(\ source\ (?<srcoperator>[^\ ]+)\ (?<sourceport>[^\ ]+))?\ destination\ (?<dstoperator>[^\ ]+)\ (?<dstport>[^\ ]+)'
             $Eval             = Get-RegexMatch @EvalParams
             if ($Eval) {
                 $Protocol            = $Eval.Groups['protocol'].Value
@@ -253,8 +261,29 @@ function Get-PwAsaObject {
                 $DestinationOperator = $Eval.Groups['dstoperator'].Value
                 $DestinationPort     = $Eval.Groups['dstport'].Value
 
-                $NewObject.SourcePort      = $Protocol + '/' + (Resolve-BuiltinService $SourcePort asa)
-                $NewObject.DestinationPort = $Protocol + '/' + (Resolve-BuiltinService $DestinationPort asa)
+                if ($SourcePort) {
+                    switch ($SourceOperator) {
+                        'eq'    { $SourcePort = $SourcePort }
+                        'neq'   { $SourcePort = "!$SourcePort" }
+                        'lt'    { $SourcePort = "lt$SourcePort" }
+                        'gt'    { $SourcePort = "gt$SourcePort" }
+                        'range' { $SourcePort = $SourcePort -replace ' ','-'}
+                        default {}
+                    }
+                    $NewObject.Member      = $Protocol + '/' + (Resolve-BuiltinService $SourcePort asa)
+                }
+
+                if ($DestinationPort) {
+                    switch ($DestinationOperator) {
+                        'eq'    { $DestinationPort = $DestinationPort }
+                        'neq'   { $DestinationPort = "!$DestinationPort" }
+                        'lt'    { $DestinationPort = "lt$DestinationPort" }
+                        'gt'    { $DestinationPort = "gt$DestinationPort" }
+                        'range' { $DestinationPort = $DestinationPort -replace ' ','-'}
+                        default {}
+                    }
+                    $NewObject.Member = $Protocol + '/' + (Resolve-BuiltinService $DestinationPort asa)
+                }
             }
             
             ##################################
