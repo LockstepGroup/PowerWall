@@ -203,12 +203,14 @@ function Get-PwAsaObject {
             }
             
             # service-object
-            $EvalParams.Regex = [regex] "^\ service-object\ (?<protocol>[^\ ]+)(\ (destination\ (?<operator>[^\ ]+)\ (?<port>[^\ ]+)|(?<port>[^\ ]+)))?"
+            $EvalParams.Regex = [regex] "^\ service-object\ (?<protocol>[^\ ]+)(\ (destination\ (?<operator>[^\ ]+)\ (?<port>[^\ ]+)(\ (?<upperport>[^\ ]+))?|(?<port>[^\ ]+)))?"
+            # service-object udp destination range 35000 40000 
             $Eval             = Get-RegexMatch @EvalParams
             if ($Eval) {
                 Write-Verbose "$VerbosePrefix Found: $($Eval.Value)"
-                $Protocol = $Eval.Groups['protocol'].Value
-                $Port     = $Eval.Groups['port'].Value
+                $Protocol  = $Eval.Groups['protocol'].Value
+                $Port      = $Eval.Groups['port'].Value
+                $UpperPort = $Eval.Groups['upperport'].Value
                 
                 switch ($Protocol) {
                     'object' {
@@ -245,6 +247,9 @@ function Get-PwAsaObject {
                 
                 if ($Port) {
                     $FullPort = $Protocol + '/' + $Port
+                    if ($UpperPort) {
+                        $FullPort += "-$UpperPort"
+                    }
                 } else {
                     $FullPort = $Protocol
                 }
@@ -252,14 +257,15 @@ function Get-PwAsaObject {
             }
 
             # service
-            $EvalParams.Regex = [regex] '^\ service\ (?<protocol>[^\ ]+)(\ source\ (?<srcoperator>[^\ ]+)\ (?<sourceport>[^\ ]+))?\ destination\ (?<dstoperator>[^\ ]+)\ (?<dstport>[^\ ]+)'
+            $EvalParams.Regex = [regex] '^\ service\ (?<protocol>[^\ ]+)(\ source\ (?<srcoperator>[^\ ]+)\ (?<sourceport>[^\ ]+))?\ destination\ (?<dstoperator>[^\ ]+)\ (?<dstport>[^\ ]+)(\ (?<upperdstport>[^\ ]+))?'
             $Eval             = Get-RegexMatch @EvalParams
             if ($Eval) {
-                $Protocol            = $Eval.Groups['protocol'].Value
-                $SourceOperator      = $Eval.Groups['srcoperator'].Value
-                $SourcePort          = $Eval.Groups['sourceport'].Value
-                $DestinationOperator = $Eval.Groups['dstoperator'].Value
-                $DestinationPort     = $Eval.Groups['dstport'].Value
+                $Protocol                 = $Eval.Groups['protocol'].Value
+                $SourceOperator           = $Eval.Groups['srcoperator'].Value
+                $SourcePort               = $Eval.Groups['sourceport'].Value
+                $DestinationOperator      = $Eval.Groups['dstoperator'].Value
+                $DestinationPort          = $Eval.Groups['dstport'].Value
+                $UpperDestinationPort     = $Eval.Groups['upperdstport'].Value
 
                 if ($SourcePort) {
                     switch ($SourceOperator) {
@@ -282,7 +288,11 @@ function Get-PwAsaObject {
                         'range' { $DestinationPort = $DestinationPort -replace ' ','-'}
                         default {}
                     }
-                    $NewObject.Member = $Protocol + '/' + (Resolve-BuiltinService $DestinationPort asa)
+                    $FullPort = $Protocol + '/' + (Resolve-BuiltinService $DestinationPort asa)
+                    if ($UpperDestinationPort) {
+                        $FullPort += "-$UpperDestinationPort"
+                    }
+                    $NewObject.Member = $FullPort
                 }
             }
             
