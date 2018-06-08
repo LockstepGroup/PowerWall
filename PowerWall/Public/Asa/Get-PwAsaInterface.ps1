@@ -131,8 +131,6 @@ function Get-PwAsaInterface {
         }
 
         # access-group
-        # access-group outside_access_in in interface outside
-
         $EvalParams = @{}
         $EvalParams.StringToEval = $entry
 

@@ -1,4 +1,4 @@
-function Get-PwAsaNatPolicy {
+function Get-PwAsaStaticRoute {
     [CmdletBinding()]
 	<#
         .SYNOPSIS
@@ -11,7 +11,7 @@ function Get-PwAsaNatPolicy {
 	)
     
     # It's nice to be able to see what cmdlet is throwing output isn't it?
-    $VerbosePrefix = "Get-PwAsaNatPolicy:"
+    $VerbosePrefix = "Get-PwAsaStaticRoute:"
     
     # Check for path and import
     if (Test-Path $ConfigPath) {
@@ -66,46 +66,28 @@ function Get-PwAsaNatPolicy {
         $EvalParams.StringToEval = $entry
 
         # Single Line Nat
-        #nat (inside,outside) after-auto source dynamic any pat-pool Outside_Pool inactive
+        # route outside 0.0.0.0 0.0.0.0 1.1.1.1 1 
         
         $EvalParams.Regex = [regex] "(?x)
-                                     ^nat\ \((?<srcint>.+?),(?<dstint>.+?)\)
-                                     (\ after-auto)?
-                                     \ source\ (?<srctrantype>.+?)\ (?<src>.+?)(\ pat-pool)?\ (?<transrc>[^\ ]+)
-                                     (\ destination\ (?<dsttrantype>.+?)\ (?<dst>.+?)\ (?<trandst>[^\ ]+))?
-                                     (?<noproxyarp>\ no-proxy-arp)?
-                                     (?<routelookup>\ route-lookup)?
-                                     (?<inactive>\ inactive)?"
+                                     ^route
+                                     \ (?<int>[^\ ]+?)
+                                     \ (?<dst>$IpRx)
+                                     \ (?<mask>$IpRx)
+                                     \ (?<nexthop>$IpRx)
+                                     \ (?<metric>\d+)"
 
         $Eval             = Get-RegexMatch @EvalParams
         if ($Eval) {
-            $n++
-            $NewObject = [NatPolicy]::new("Asa")
+            $NewObject = [Route]::new()
             $ReturnArray += $NewObject
             Write-Verbose "$VerbosePrefix $entry"
 
-            $NewObject.Number                     = $n
-            $NewObject.SourceInterface            = $Eval.Groups['srcint'].Value
-            $NewObject.DestinationInterface       = $Eval.Groups['dstint'].Value
-            $NewObject.OriginalSource             = $Eval.Groups['src'].Value
-            $NewObject.OriginalDestination        = $Eval.Groups['dst'].Value
-            $NewObject.TranslatedSource           = $Eval.Groups['transrc'].Value
-            $NewObject.TranslatedDestination      = $Eval.Groups['trandst'].Value
-            $NewObject.SourceTranslationType      = $Eval.Groups['srctrantype'].Value
-            $NewObject.DestinationTranslationType = $Eval.Groups['dsttrantype'].Value
-
-            if ($Eval.Groups['noproxyarp'].Value) {
-                $NewObject.ProxyArp = $false
-            }
-
-            if ($Eval.Groups['routelookup'].Value) {
-                $NewObject.RouteLookup = $true
-            }
-
-            if ($Eval.Groups['inactive'].Value) {
-                $NewObject.Enabled = $false
-            }
+            $NewObject.Destination = $Eval.Groups['dst'].Value + '/' + (ConvertTo-MaskLength $Eval.Groups['mask'].Value)
+            $NewObject.Interface   = $Eval.Groups['int'].Value
+            $NewObject.NextHop     = $Eval.Groups['nexthop'].Value
+            $NewObject.Metric      = $Eval.Groups['metric'].Value
         }
+
 	}	
 	return $ReturnArray
 }
