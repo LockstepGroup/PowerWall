@@ -4,4 +4,8 @@ Class Interface {
     [string]$IpAddress
     [string]$MacAddress
     [string]$Id
+    [string]$Nameif
+    [int]$SecurityLevel
+    [int]$Speed
+    [string]$Duplex
 }

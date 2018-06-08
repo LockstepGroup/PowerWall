@@ -123,7 +123,7 @@ function Get-PwAsaNatPolicy {
             $n++
             $NewObject = [NatPolicy]::new("Asa")
             $ReturnArray += $NewObject
-            Write-Verbose $entry
+            Write-Verbose "$VerbosePrefix $entry"
 
             $NewObject.Number                     = $n
             $NewObject.SourceInterface            = $Eval.Groups['srcint'].Value
