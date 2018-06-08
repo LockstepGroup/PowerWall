@@ -129,6 +129,26 @@ function Get-PwAsaInterface {
                 continue
             }
         }
+
+        # access-group
+        # access-group outside_access_in in interface outside
+
+        $EvalParams = @{}
+        $EvalParams.StringToEval = $entry
+
+        $EvalParams.Regex = [regex] "^access-group\ (?<acl>[^\ ]+?)\ (?<dir>[^\ ]+?)\ interface\ (?<int>.+)"
+        $Eval             = Get-RegexMatch @EvalParams
+        if ($Eval) {
+            Write-Verbose "$VerbosePrefix $entry"
+            $Interface = $Eval.Groups['int'].Value
+            $Lookup = $ReturnArray | Where-Object { $_.NameIf -eq $Interface }
+            if ($Lookup) {
+                $Lookup.AccessList = $Eval.Groups['acl'].Value
+                $Lookup.AccessListDirection = $Eval.Groups['dir'].Value
+            }
+
+            continue
+        }
 	}	
 	return $ReturnArray
 }

@@ -8,4 +8,6 @@ Class Interface {
     [int]$SecurityLevel
     [int]$Speed
     [string]$Duplex
+    [string]$AccessList
+    [string]$AccessListDirection
 }
