@@ -1,5 +1,6 @@
 Class NatPolicy {
     [int]$Number
+    [bool]$Enabled
 
     [string]$SourceInterface
     [string]$DestinationInterface
@@ -22,6 +23,7 @@ Class NatPolicy {
                 $this.Number      = 0
                 $this.ProxyArp    = $true
                 $this.RouteLookup = $false
+                $this.Enabled     = $true
             }
             default {
                 $this.Number               = 0

@@ -107,14 +107,16 @@ function Get-PwAsaNatPolicy {
         $EvalParams.StringToEval = $entry
 
         # Single Line Nat
-        #nat (outside,inside) source static ANYCONNECT ANYCONNECT destination static INTERNAL INTERNAL no-proxy-arp route-lookup
+        #nat (inside,outside) after-auto source dynamic any pat-pool Outside_Pool inactive
         
         $EvalParams.Regex = [regex] "(?x)
                                      ^nat\ \((?<srcint>.+?),(?<dstint>.+?)\)
-                                     \ source\ (?<srctrantype>.+?)\ (?<src>.+?)\ (?<transrc>[^\ ]+)
+                                     (\ after-auto)?
+                                     \ source\ (?<srctrantype>.+?)\ (?<src>.+?)(\ pat-pool)?\ (?<transrc>[^\ ]+)
                                      (\ destination\ (?<dsttrantype>.+?)\ (?<dst>.+?)\ (?<trandst>[^\ ]+))?
                                      (?<noproxyarp>\ no-proxy-arp)?
-                                     (?<routelookup>\ route-lookup)?"
+                                     (?<routelookup>\ route-lookup)?
+                                     (?<inactive>\ inactive)?"
 
         $Eval             = Get-RegexMatch @EvalParams
         if ($Eval) {
@@ -139,6 +141,10 @@ function Get-PwAsaNatPolicy {
 
             if ($Eval.Groups['routelookup'].Value) {
                 $NewObject.RouteLookup = $true
+            }
+
+            if ($Eval.Groups['inactive'].Value) {
+                $NewObject.Enabled = $false
             }
         }
         
