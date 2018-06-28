@@ -26,4 +26,7 @@ Class ResolvedSecurityPolicy {
     [string]$RejectWith
     [string]$IcmpType
     [string]$Enabled
+
+    [decimal]$RxBytes
+    [decimal]$TxBytes
 }

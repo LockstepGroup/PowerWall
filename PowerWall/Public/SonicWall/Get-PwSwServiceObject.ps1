@@ -1,4 +1,4 @@
-function Get-PwSwAddressObject {
+function Get-PwSwServiceObject {
     [CmdletBinding()]
 	<#
         .SYNOPSIS
@@ -11,7 +11,7 @@ function Get-PwSwAddressObject {
 	)
     
     # It's nice to be able to see what cmdlet is throwing output isn't it?
-    $VerbosePrefix = "Get-PwSwAddressObject:"
+    $VerbosePrefix = "Get-PwSwServiceObject:"
     
     # Check for path and import
     if (Test-Path $ConfigPath) {
@@ -25,7 +25,16 @@ function Get-PwSwAddressObject {
 	
 	$TotalLines = $LoopArray.Count
 	$i          = 0 
-	$StopWatch  = [System.Diagnostics.Stopwatch]::StartNew() # used by Write-Progress so it doesn't slow the whole function down
+    $StopWatch  = [System.Diagnostics.Stopwatch]::StartNew() # used by Write-Progress so it doesn't slow the whole function down
+    
+    $ProtocolMap = @{}
+    $ProtocolMap.'108' = 'ipcomp'
+    $ProtocolMap.'17'  = 'udp'
+    $ProtocolMap.'1'   = 'icmp'
+    $ProtocolMap.'2'   = 'igmp'
+    $ProtocolMap.'41'  = 'ipv6'
+    $ProtocolMap.'50'  = 'esp'
+    $ProtocolMap.'6'   = 'tcp'
 	
 	:fileloop foreach ($entry in $LoopArray) {
 		$i++
@@ -44,7 +53,7 @@ function Get-PwSwAddressObject {
 		###########################################################################################
         # Check for the Section
         
-        $Regex = [regex] "^Address\ Object\ Table:"
+        $Regex = [regex] "^Service\ Object\ Table:"
         $Match = Get-RegexMatch $Regex $entry
         if ($Match) {
 			$KeepGoing = $true
@@ -52,7 +61,7 @@ function Get-PwSwAddressObject {
 			continue
         }
         
-        $Regex = [regex] "^End\ Address\ Object\ Table"
+        $Regex = [regex] "^End\ Service\ Object\ Table"
         $Match = Get-RegexMatch $Regex $entry
         if ($Match) {
 			$KeepGoing = $false
@@ -95,35 +104,41 @@ function Get-PwSwAddressObject {
             # New Object
             $EvalParams.Regex = [regex] "(?x)
                                          ^(?<name>.+?)
-                                         (\((?<comment>.+?)\))?:
+                                         #(\((?<comment>.+?)\))?
+                                         :
                                          .+?
                                          (
                                              GROUP|
-                                             HOST:\ (?<address>$IpRx)|
-                                             NETWORK:\ (?<address>$IpRx)\ -\ (?<mask>$IpRx)|
-                                             RANGE:\ (?<address>$IpRx)\ -\ (?<endaddress>$IpRx)
+                                             IpType:\ (?<protocol>\d+)\ Port\ Begin:\ (?<portbegin>\d+)\ Port\ End:\ (?<portend>\d+)
                                          )"
             $Eval = Get-RegexMatch @EvalParams
             if ($Eval) {
-                $Lookup = $ReturnArray | Where-Object { $_.Name -ceq $Eval.Groups['name'].Value }
-                if ($Lookup) {
-                    Write-Verbose "dupe object $($Eval.Groups['name'].Value)"
-                    continue
-                }
-                $NewObject          = [NetworkObject]::new()
+                $NewObject          = [ServiceObject]::new()
                 $NewObject.Name     = $Eval.Groups['name'].Value
                 $NewObject.Comment  = $Eval.Groups['comment'].Value
                 $ReturnArray       += $NewObject
                 Write-Verbose "$i`: NewObject: $($NewObject.Name) ($($NewObject.Comment))"
 
-                if ($Eval.Groups['address'].Success) {
-                    $Member = $Eval.Groups['address'].Value
-                    if ($Eval.Groups['mask'].Success) {
-                        $Member += '/' + (ConvertTo-MaskLength $Eval.Groups['mask'].Value)
+                if ($Eval.Groups['protocol'].Success) {
+                    $Protocol  = $Eval.Groups['protocol'].Value
+                    $PortBegin = $Eval.Groups['portbegin'].Value
+                    $PortEnd   = $Eval.Groups['portend'].Value
+
+                    $ProtocolLookup = $ProtocolMap.$Protocol
+                    if ($ProtocolLookup) {
+                        $Member = $ProtocolLookup + '/'
+                    } else {
+                        $Member = $Protocol + '/'
                     }
-                    if ($Eval.Groups['endaddress'].Success) {
-                        $Member += '-' + $Eval.Groups['endaddress'].Value
+
+                    if ($PortBegin -eq $PortEnd) {
+                        $Port = $PortBegin
+                    } else {
+                        $Port = $PortBegin + '-' + $PortEnd
                     }
+
+                    $Member += $Port
+
                     $NewObject.Member += $Member
                 }
 
@@ -133,21 +148,5 @@ function Get-PwSwAddressObject {
         }
     }
     
-    foreach ($object in $ReturnArray) {
-        if ($object.MemberOf) {
-            foreach ($m in $object.MemberOf) {
-                $Lookup = $ReturnArray | Where-Object { $_.Name -ceq $m }
-                if ($Lookup) {
-                    $MemberLookup = $Lookup.Member | Where-Object { $_ -eq $object.Name }
-                    if (!($MemberLookup)) {
-                        $Lookup.Member += $object.Name
-                    }
-                } else {
-                    Throw "Group not found $m"
-                }
-            }
-        }
-    }
-
 	return $ReturnArray
 }

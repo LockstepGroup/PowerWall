@@ -1,5 +1,6 @@
 Class NatPolicy {
     [int]$Number
+    [string]$Comment
     [bool]$Enabled
 
     [string]$SourceInterface
@@ -7,15 +8,20 @@ Class NatPolicy {
 
     [string]$OriginalSource
     [string]$OriginalDestination
+    [string]$OriginalService
 
     [string]$TranslatedSource
     [string]$TranslatedDestination
+    [string]$TranslatedService
 
     [string]$SourceTranslationType
     [string]$DestinationTranslationType
 
     [bool]$ProxyArp
     [bool]$RouteLookup
+
+    [decimal]$RxBytes
+    [decimal]$TxBytes
 
     NatPolicy([string] $FirewallType) {
         switch ($FirewallType) {

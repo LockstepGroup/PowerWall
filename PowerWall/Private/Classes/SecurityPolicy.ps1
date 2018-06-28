@@ -23,7 +23,10 @@ Class SecurityPolicy {
     [string]$PacketState
     [string]$RejectWith
     [string]$IcmpType
-    [string]$Enabled
+    [bool]$Enabled
+
+    [decimal]$RxBytes
+    [decimal]$TxBytes
 
     SecurityPolicy([string] $AclType) {
         switch ($AclType) {
