@@ -66,6 +66,8 @@ function Resolve-BuiltinService {
         "sip"               = "5060"
         "smtp"              = "25"
         "snmp"              = "161"
+        "time-exceeded"     = "0"
+        "unreachable"       = "0"
         "snmptrap" = "162"
         "sqlnet" = "1521"
         "ssh" = "22"
