@@ -67,7 +67,8 @@ function Get-PwAsaObject {
                     }
 
                     { ($_ -eq 'service') -or
-                      ($_ -eq 'protocol') } {
+                      ($_ -eq 'protocol') -or
+                      ($_ -eq 'icmp-type') } {
                         $NewObject = [ServiceObject]::new()
                         break
                     }

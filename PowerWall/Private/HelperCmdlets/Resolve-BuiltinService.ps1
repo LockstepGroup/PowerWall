@@ -83,6 +83,7 @@ function Resolve-BuiltinService {
         "whois" = "43"
         "www" = "80"
         "xdmcp" = "177"
+        "packet-too-big" = "packet-too-big"
     }
 
     if ($Service -match '^\d+$') {

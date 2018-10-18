@@ -44,7 +44,7 @@ function Get-PwSwAddressObject {
 		###########################################################################################
         # Check for the Section
         
-        $Regex = [regex] "^Address\ Object\ Table:"
+        $Regex = [regex] "^(Address\ Object\ Table:|#Network\ :\ Address\ Objects_START)"
         $Match = Get-RegexMatch $Regex $entry
         if ($Match) {
 			$KeepGoing = $true
@@ -52,7 +52,7 @@ function Get-PwSwAddressObject {
 			continue
         }
         
-        $Regex = [regex] "^End\ Address\ Object\ Table"
+        $Regex = [regex] "^(End\ Address\ Object\ Table|#Network\ :\ Address\ Objects_END)"
         $Match = Get-RegexMatch $Regex $entry
         if ($Match) {
 			$KeepGoing = $false
@@ -94,15 +94,17 @@ function Get-PwSwAddressObject {
 
             # New Object
             $EvalParams.Regex = [regex] "(?x)
-                                         ^(?<name>.+?)
-                                         (\((?<comment>.+?)\))?:
-                                         .+?
-                                         (
-                                             GROUP|
-                                             HOST:\ (?<address>$IpRx)|
-                                             NETWORK:\ (?<address>$IpRx)\ -\ (?<mask>$IpRx)|
-                                             RANGE:\ (?<address>$IpRx)\ -\ (?<endaddress>$IpRx)
-                                         )"
+                ^(---+)?
+                (?<name>.+?)
+                (\((?<comment>.+?)\))?
+                (---+|:)
+                .+?
+                (
+                    GROUP|
+                    HOST:\ (?<address>$IpRx)|
+                    NETWORK:\ (?<address>$IpRx)\ -\ (?<mask>$IpRx)|
+                    RANGE:\ (?<address>$IpRx)\ -\ (?<endaddress>$IpRx)
+                )"
             $Eval = Get-RegexMatch @EvalParams
             if ($Eval) {
                 $Lookup = $ReturnArray | Where-Object { $_.Name -ceq $Eval.Groups['name'].Value }
