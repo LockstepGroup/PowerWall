@@ -106,6 +106,31 @@ function Get-PwAsaNatPolicy {
                 $NewObject.Enabled = $false
             }
         }
+
+        # static single line nat from pre-8.3
+        # static (dmz,outside) 72.1.86.22 10.35.86.70 netmask 255.255.255.255
+        
+        $EvalParams.Regex = [regex] "(?x)
+                                     ^static\ \((?<srcint>.+?),(?<dstint>.+?)\)
+                                     \ (?<src>.+?)
+                                     \ (?<transrc>.+?)
+                                     \ netmask
+                                     \ (?<mask>.+)
+                                     (?<inactive>\ inactive)?"
+
+        $Eval = Get-RegexMatch @EvalParams
+        if ($Eval) {
+            $n++
+            $NewObject = [NatPolicy]::new("Asa")
+            $ReturnArray += $NewObject
+            Write-Verbose "$VerbosePrefix $entry"
+
+            $NewObject.Number                     = $n
+            $NewObject.SourceInterface            = $Eval.Groups['srcint'].Value
+            $NewObject.DestinationInterface       = $Eval.Groups['dstint'].Value
+            $NewObject.OriginalSource             = $Eval.Groups['src'].Value + '/' + (ConvertTo-MaskLength $Eval.Groups['mask'].Value)
+            $NewObject.TranslatedSource           = $Eval.Groups['transrc'].Value + '/' + (ConvertTo-MaskLength $Eval.Groups['mask'].Value)
+        }
 	}	
 	return $ReturnArray
 }
