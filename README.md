@@ -17,7 +17,7 @@ $rules = Resolve-PwSecurityPolicy -Policy $AccessLists -NetworkObjects $NetworkO
 $ResolvedNetworkObject = foreach ($object in $NetworkObjects) {
     $ResolvedObject = Resolve-PwObject -ObjectToResolve $object.Name -ObjectList $NetworkObjects
     foreach ($robject in $ResolvedObject) {
-        $NewObject = New-NetworkObject -Name $object.Name
+        $NewObject = New-PwNetworkObject -Name $object.Name
         $NewObject.Comment = $object.Comment
         $NewObject.ResolvedMember = $robject
         $NewObject.MemberOf = $object.MemberOf
@@ -33,7 +33,7 @@ $ResolvedNetworkObject = foreach ($object in $NetworkObjects) {
 $ResolvedServiceObject = foreach ($object in $ServiceObjects) {
     $ResolvedObject = Resolve-PwObject -ObjectToResolve $object.Name -ObjectList $ServiceObjects
     foreach ($robject in $ResolvedObject) {
-        $NewObject = New-ServiceObject -Name $object.Name
+        $NewObject = New-PwServiceObject -Name $object.Name
         $NewObject.Comment = $object.Comment
         $NewObject.Protocol = $object.Protocol
         $NewObject.SourcePort = $object.SourcePort
