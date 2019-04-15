@@ -3,6 +3,7 @@ Class NetworkObject {
     [string]$Name
     [string]$Comment
     [string[]]$Member
+    [string]$ResolvedMember
     [string[]]$MemberOf
 
     # Object Nat

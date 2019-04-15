@@ -6,5 +6,6 @@ Class ServiceObject {
     [string[]]$SourcePort
     [string[]]$DestinationPort
     [string[]]$Member
+    [string]$ResolvedMember
     [string[]]$MemberOf
 }
