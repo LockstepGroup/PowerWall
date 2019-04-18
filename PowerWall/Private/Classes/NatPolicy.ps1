@@ -1,4 +1,4 @@
-Class NatPolicy {
+Class NatPolicy:ICloneable {
     [int]$Number
     [string]$Comment
     [bool]$Enabled
@@ -23,16 +23,32 @@ Class NatPolicy {
     [decimal]$RxBytes
     [decimal]$TxBytes
 
+    ####################################### Methods ######################################
+    # Clone
+    [Object] Clone () {
+        $NewObject = [NatPolicy]::New()
+        foreach ($Property in ($this | Get-Member -MemberType Property)) {
+            $NewObject.$($Property.Name) = $this.$($Property.Name)
+        } # foreach
+        return $NewObject
+    }
+
+    ##################################### Initiators #####################################
+    # Empty Initiator
+    NatPolicy() {
+    }
+
+    # Initator with FirewallType
     NatPolicy([string] $FirewallType) {
         switch ($FirewallType) {
             Asa {
-                $this.Number      = 0
-                $this.ProxyArp    = $true
+                $this.Number = 0
+                $this.ProxyArp = $true
                 $this.RouteLookup = $false
-                $this.Enabled     = $true
+                $this.Enabled = $true
             }
             default {
-                $this.Number               = 0
+                $this.Number = 0
             }
         }
     }

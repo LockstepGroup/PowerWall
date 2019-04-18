@@ -74,6 +74,7 @@ function Get-PwAsaNatPolicy {
                     if ($NetworkObjectsWithNatNeeded) {
                         Write-Verbose "$VerbosePrefix NetworkObjectsWithNatNeeded -eq $true"
                         foreach ($object in $NetworkObjectsWithNat) {
+                            $n++
                             Write-Verbose "$VerbosePrefix adding object NAT"
                             $NewObject = [NatPolicy]::new("Asa")
                             $ReturnArray += $NewObject

@@ -5,13 +5,14 @@ firewall parser and config generator
 ```powershell
 $AsaFile = 'running-config.cfg'
 
-$AccessLists = Get-PwAsaSecurityPolicy -ConfigPath $AsaFile
+$AccessPolicies = Get-PwAsaSecurityPolicy -ConfigPath $AsaFile
+$NatPolicies = Get-PwAsaNatPolicy -ConfigPath $AsaFile
 
 $Objects        = Get-PwAsaObject -ConfigPath $AsaFile
 $NetworkObjects = $Objects | Where-Object { $_.GetType().Name -eq 'NetworkObject' }
 $ServiceObjects = $Objects | Where-Object { $_.GetType().Name -eq 'ServiceObject' }
 
-$rules = Resolve-PwSecurityPolicy -Policy $AccessLists -NetworkObjects $NetworkObjects -ServiceObjects $ServiceObjects -FirewallType 'asa'
+$ResolvedAccessPolicies = Resolve-PwSecurityPolicy -Policy $AccessPolicies -NetworkObjects $NetworkObjects -ServiceObjects $ServiceObjects -FirewallType 'asa'
 
 # Resolve Network Objects
 $ResolvedNetworkObject = foreach ($object in $NetworkObjects) {
