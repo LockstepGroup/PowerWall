@@ -12,7 +12,7 @@
     RootModule        = 'PowerWall.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '1.0.1'
+    ModuleVersion     = '1.0.2'
 
     # Supported PSEditions
     # CompatiblePSEditions = @()
@@ -99,10 +99,10 @@
             # Tags = @()
 
             # A URL to the license for this module.
-            # LicenseUri = ''
+            LicenseUri = 'https://raw.githubusercontent.com/LockstepGroup/PowerWall/master/LICENSE?token=AAF6JLX7JXMTN7WMZPCEWDK4YIMJG'
 
             # A URL to the main website for this project.
-            # ProjectUri = ''
+            ProjectUri = 'https://github.com/LockstepGroup/PowerWall'
 
             # A URL to an icon representing this module.
             # IconUri = ''
@@ -121,4 +121,5 @@
     # DefaultCommandPrefix = ''
 
 }
+
 
