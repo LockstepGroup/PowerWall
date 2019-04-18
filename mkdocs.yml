@@ -1,0 +1,29 @@
+site_name: PowerWall Docs
+theme: readthedocs
+pages:
+  - Home: index.md
+  - Cmdlets:
+    - Get-PwAsaInterface: cmdlets/Get-PwAsaInterface.md
+    - Get-PwAsaNatPolicy: cmdlets/Get-PwAsaNatPolicy.md
+    - Get-PwAsaObject: cmdlets/Get-PwAsaObject.md
+    - Get-PwAsaSecurityPolicy: cmdlets/Get-PwAsaSecurityPolicy.md
+    - Get-PwAsaStaticRoute: cmdlets/Get-PwAsaStaticRoute.md
+    - Get-PwIpTableRule: cmdlets/Get-PwIpTableRule.md
+    - Get-PwSsExpression: cmdlets/Get-PwSsExpression.md
+    - Get-PwSsInterface: cmdlets/Get-PwSsInterface.md
+    - Get-PwSsNetworkObject: cmdlets/Get-PwSsNetworkObject.md
+    - Get-PwSsRoute: cmdlets/Get-PwSsRoute.md
+    - Get-PwSsSecurityPolicy: cmdlets/Get-PwSsSecurityPolicy.md
+    - Get-PwSsServiceObject: cmdlets/Get-PwSsServiceObject.md
+    - Get-PwSwAddressObject: cmdlets/Get-PwSwAddressObject.md
+    - Get-PwSwNatPolicy: cmdlets/Get-PwSwNatPolicy.md
+    - Get-PwSwSecurityPolicy: cmdlets/Get-PwSwSecurityPolicy.md
+    - Get-PwSwServiceObject: cmdlets/Get-PwSwServiceObject.md
+    - New-PwNetworkObject: cmdlets/New-PwNetworkObject.md
+    - New-PwSecurityPolicy: cmdlets/New-PwSecurityPolicy.md
+    - New-PwServiceObject: cmdlets/New-PwServiceObject.md
+    - Resolve-PolicyField: cmdlets/Resolve-PolicyField.md
+    - Resolve-PwNatPolicy: cmdlets/Resolve-PwNatPolicy.md
+    - Resolve-PwObject: cmdlets/Resolve-PwObject.md
+    - Resolve-PwSecurityPolicy: cmdlets/Resolve-PwSecurityPolicy.md
+
