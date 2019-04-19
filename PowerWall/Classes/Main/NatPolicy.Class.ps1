@@ -14,6 +14,13 @@ Class NatPolicy:ICloneable {
     [string]$TranslatedDestination
     [string]$TranslatedService
 
+    [string]$ResolvedOriginalSource
+    [string]$ResolvedOriginalDestination
+    [string]$ResolvedOriginalService
+    [string]$ResolvedTranslatedSource
+    [string]$ResolvedTranslatedDestination
+    [string]$ResolvedTranslatedService
+
     [string]$SourceTranslationType
     [string]$DestinationTranslationType
 

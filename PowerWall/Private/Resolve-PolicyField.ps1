@@ -1,0 +1,75 @@
+function Resolve-PolicyField {
+    [CmdletBinding()]
+    Param (
+        [Parameter(ParameterSetName = "SecurityPolicyAddress", Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
+        [Parameter(ParameterSetName = "SecurityPolicyService", Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
+        [SecurityPolicy]$SecurityPolicy,
+
+        [Parameter(ParameterSetName = "NatPolicyAddress", Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
+        [Parameter(ParameterSetName = "NatPolicyService", Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
+        [NatPolicy]$NatPolicy,
+
+        [Parameter(ParameterSetName = "SecurityPolicyAddress", Mandatory = $true, Position = 1)]
+        [Parameter(ParameterSetName = "NatPolicyAddress", Mandatory = $true, Position = 1)]
+        [NetworkObject[]]$Addresses,
+
+        [Parameter(ParameterSetName = "SecurityPolicyService", Mandatory = $true, Position = 1)]
+        [Parameter(ParameterSetName = "NatPolicyService", Mandatory = $true, Position = 1)]
+        [ServiceObject[]]$Services,
+
+        [Parameter(Mandatory = $true)]
+        [string]$FieldName,
+
+        [Parameter(Mandatory = $true)]
+        [string]$FirewallType
+    )
+
+    Begin {
+        $VerbosePrefix = "Resolve-PolicyField:"
+        $ResolvedFieldName = 'Resolved' + $FieldName
+        $ReturnObject = @()
+    }
+
+    Process {
+        Write-Verbose "$VerbosePrefix ParameterSetName: $($PsCmdlet.ParameterSetName)"
+        if ($SecurityPolicy) {
+            $Policy = $SecurityPolicy
+        } elseif ($NatPolicy) {
+            $Policy = $NatPolicy
+        }
+        $global:Policy = $Policy
+        $global:FieldName = $FieldName
+
+        if (($Policy.$FieldName.Count -gt 0) -and ("" -ne $Policy.$FieldName)) {
+            Write-Verbose "$VerbosePrefix Policy contains $($Policy.FieldName.Count) entries in Field: $FieldName"
+            switch -Regex ($FieldName) {
+                '(Source|Destination)' {
+                    Write-Verbose "$VerbosePrefix Resolving Address"
+                    $ResolvedField = Resolve-PwObject -ObjectToResolve $Policy.$FieldName -ObjectList $Addresses -FirewallType $FirewallType
+                }
+                'Service' {
+                    $ResolvedField = Resolve-PwObject -ObjectToResolve $Policy.$FieldName -ObjectList $Services -FirewallType $FirewallType
+                }
+                default {
+                    Throw "$VerbosePrefix FieldName not handled: $FieldName"
+                }
+            }
+
+            Write-Verbose "$VerbosePrefix $($Policy.$FieldName) resolves to $($ResolvedField.Count) objects"
+
+            foreach ($r in $ResolvedField) {
+                $NewPolicy = $Policy.Clone()
+                $ReturnObject += $NewPolicy
+
+                $NewPolicy.$ResolvedFieldName = $r
+            }
+        } else {
+            $NewPolicy = $Policy.Clone()
+            $ReturnObject += $NewPolicy
+        }
+    }
+
+    End {
+        $ReturnObject
+    }
+}

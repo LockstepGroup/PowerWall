@@ -5,7 +5,7 @@ function Resolve-Property {
         $Policy,
 
         [Parameter(Mandatory = $True, Position = 1)]
-        [ValidateSet("Source", "Destination", "Service")]
+        [ValidateSet("Source", "Destination", "Service", "OriginalSource", "OriginalDestination", "OriginalService", "TranslatedSource", "TranslatedDestination", "TranslatedService")]
         [string]$Property,
 
         [Parameter(Mandatory = $True, Position = 2)]

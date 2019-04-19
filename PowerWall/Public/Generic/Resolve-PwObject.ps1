@@ -1,13 +1,13 @@
 function Resolve-PwObject {
     [CmdletBinding()]
     Param (
-        [Parameter(Mandatory=$True,Position=0)]
+        [Parameter(Mandatory = $True, Position = 0)]
         [string[]]$ObjectToResolve,
 
-        [Parameter(Mandatory=$True,Position=1)]
+        [Parameter(Mandatory = $True, Position = 1)]
         [array]$ObjectList,
 
-        [Parameter(Mandatory=$False)]
+        [Parameter(Mandatory = $False)]
         [String]$FirewallType
     )
 
@@ -15,7 +15,7 @@ function Resolve-PwObject {
     $VerbosePrefix = "Resolve-PwObject:"
 
     $ReturnArray = @()
-    
+
     foreach ($object in $ObjectToResolve) {
         Write-Verbose "$VerbosePrefix Looking up $object"
         $Lookup = $ObjectList | Where-Object { $_.Name -ceq $object }
@@ -27,7 +27,7 @@ function Resolve-PwObject {
                         Write-Verbose "$VerbosePrefix Looking up $($Lookup.Member.Count) members"
                         $ReturnArray += Resolve-PwObject -ObjectToResolve $Lookup.Member -ObjectList $ObjectList
                     } else {
-                        $New = "" | Select-Object Protocol,SourcePort,DestinationPort
+                        $New = "" | Select-Object Protocol, SourcePort, DestinationPort
 
                         if ($Lookup.SourcePort) {
                             $New.SourcePort = $Lookup.SourcePort
@@ -53,7 +53,7 @@ function Resolve-PwObject {
                             $ReturnArray += Resolve-PwObject -ObjectToResolve $value -ObjectList $ObjectList
                         }
                     }
-                    
+
                 }
                 'SsExpression' {
                     $ReturnArray += $Lookup
@@ -62,10 +62,12 @@ function Resolve-PwObject {
                     Throw "Type not handled: $($Lookup.GetType().Name)"
                 }
             }
-            
+
         } else {
             Write-Verbose "$VerbosePrefix Object not found"
-            if ($object -ne 'any') {
+            if ([HelperRegex]::isFqdnOrIpv4($object, $true)) {
+                $ReturnArray += $object
+            } elseif ($object -ne 'any') {
                 $ServiceRx = [regex] '^(?<protocol>\w+(-\w+)?)\/(?<port>\d+(-\d+)?)$'
                 $ServiceMatch = $ServiceRx.Match($object)
                 if (!($ServiceMatch.Success)) {
@@ -86,8 +88,8 @@ function Resolve-PwObject {
                 }
                 $ServiceMatch = $ServiceRx.Match($object)
                 if ($ServiceMatch.Success) {
-                    $New                 = "" | Select-Object Protocol,SourcePort,DestinationPort
-                    $New.Protocol        = $ServiceMatch.Groups['protocol'].Value
+                    $New = "" | Select-Object Protocol, SourcePort, DestinationPort
+                    $New.Protocol = $ServiceMatch.Groups['protocol'].Value
                     $New.DestinationPort = $ServiceMatch.Groups['port'].Value
                     $ReturnArray += $New
                 } else {

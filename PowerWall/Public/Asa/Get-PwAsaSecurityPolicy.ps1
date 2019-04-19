@@ -1,20 +1,20 @@
 function Get-PwAsaSecurityPolicy {
     [CmdletBinding()]
-	<#
+    <#
         .SYNOPSIS
             Gets named addresses from saved ASA config file.
 	#>
 
-	Param (
-		[Parameter(Mandatory=$True,Position=0)]
-		[string]$ConfigPath
-	)
-    
+    Param (
+        [Parameter(Mandatory = $True, Position = 0)]
+        [string]$ConfigPath
+    )
+
     # It's nice to be able to see what cmdlet is throwing output isn't it?
     $VerbosePrefix = "Get-PwAsaSecurityPolicy:"
 
     Write-Verbose "$VerbosePrefix Getting rules from $ConfigPath"
-    
+
     # Check for path and import
     if (Test-Path $ConfigPath) {
         $LoopArray = Get-Content $ConfigPath
@@ -22,54 +22,54 @@ function Get-PwAsaSecurityPolicy {
 
     # Setup return Array
     $ReturnArray = @()
-	
+
     $IpRx = [regex] "(\d+)\.(\d+)\.(\d+)\.(\d+)"
-	$n = 1
-    
-	$TotalLines = $LoopArray.Count
-	$i          = 0 
-	$StopWatch  = [System.Diagnostics.Stopwatch]::StartNew() # used by Write-Progress so it doesn't slow the whole function down
-	
-	$ReturnObject = @()
-	
-	:fileloop foreach ($entry in $LoopArray) {
-		$i++
-		
-		# Write progress bar, we're only updating every 1000ms, if we do it every line it takes forever
-		
-		if ($StopWatch.Elapsed.TotalMilliseconds -ge 1000) {
-			$PercentComplete = [math]::truncate($i / $TotalLines * 100)
-	        Write-Progress -Activity "Reading Support Output" -Status "$PercentComplete% $i/$TotalLines" -PercentComplete $PercentComplete
-	        $StopWatch.Reset()
-			$StopWatch.Start()
-		}
-		
-		if ($entry -eq "") { continue }
-		
-		###########################################################################################
-		# Check for the Section
-		
-		
+    $n = 1
+
+    $TotalLines = $LoopArray.Count
+    $i = 0
+    $StopWatch = [System.Diagnostics.Stopwatch]::StartNew() # used by Write-Progress so it doesn't slow the whole function down
+
+    $ReturnObject = @()
+
+    :fileloop foreach ($entry in $LoopArray) {
+        $i++
+
+        # Write progress bar, we're only updating every 1000ms, if we do it every line it takes forever
+
+        if ($StopWatch.Elapsed.TotalMilliseconds -ge 1000) {
+            $PercentComplete = [math]::truncate($i / $TotalLines * 100)
+            Write-Progress -Activity "Reading Support Output" -Status "$PercentComplete% $i/$TotalLines" -PercentComplete $PercentComplete
+            $StopWatch.Reset()
+            $StopWatch.Start()
+        }
+
+        if ($entry -eq "") { continue }
+
+        ###########################################################################################
+        # Check for the Section
+
+
         $Regex = [regex] "(?x)
-            access-list\ 
-            (?<aclname>[^\ ]+?)\ 
+            access-list\s
+            (?<aclname>[^\ ]+?)\s
             (
-                remark\ 
+                remark\s
                 (?<remark>.+)
             |
                 (
-                    (?<type>extended)\ 
+                    (?<type>extended)\s
                     (?<action>[^\ ]+?)
-                    
+
                     # protocol
                     \ ((?<prottype>object-group|object)\ )?(?<protocol>[^\ ]+?)
-                    
+
                     # source
                     (
                         \ ((?<srcnetwork>$IpRx)\ (?<srcmask>$IpRx))|
                         \ ((?<srctype>host|object-group|object)\ )?(?<source>[^\ ]+)
                     )
-                    
+
                     # destination
                     (
                         \ ((?<dstnetwork>$IpRx)\ (?<dstmask>$IpRx))|
@@ -81,13 +81,13 @@ function Get-PwAsaSecurityPolicy {
                         \ (?<svctype>range)\ (?<service>\w+\ \w+)|
                         \ (?<service>echo)
                     )?
-                    
+
                     # flags
                     (?<log>\ log\ (?<loglevel>\w+))?
                     (?<inactive>\ inactive)?
                 |
-                    (?<type>standard)\ 
-                    (?<action>[^\ ]+?)\ 
+                    (?<type>standard)\s
+                    (?<action>[^\ ]+?)\s
                     (
                         ((?<srcnetwork>$IpRx)\ (?<srcmask>$IpRx))|
                         ((?<srctype>host|object-group|object)\ )?(?<source>[^\ ]+)
@@ -95,23 +95,24 @@ function Get-PwAsaSecurityPolicy {
                 )
             )
         "
-		$Match = Get-RegexMatch $Regex $entry
-		if ($Match) {
+        $Match = Get-RegexMatch $Regex $entry
+        if ($Match) {
+            Write-Verbose "$VerbosePrefix Match Found"
             if ($Match.Groups['remark'].Success) {
-                $Remark            = $Match.Groups['remark'].Value
+                $Remark = $Match.Groups['remark'].Value
                 #$NewObject.Comment = $Remark
                 Write-Verbose "$VerbosePrefix Adding remark: $Remark"
                 continue
             } else {
-                $NewObject    = [SecurityPolicy]::new("")
+                $NewObject = [SecurityPolicy]::new("")
                 if ($Remark) {
                     $NewObject.Comment = $Remark
                     $Remark = $null
                 }
 
                 $NewObject.AccessList = $Match.Groups['aclname'].Value
-                $NewObject.AclType    = $Match.Groups['type'].Value
-                
+                $NewObject.AclType = $Match.Groups['type'].Value
+
                 # See if we need to increment the sequence number
                 $CheckForAcl = $ReturnArray | Where-Object { $_.AccessList -eq $NewObject.AccessList }
                 if ($CheckForAcl) {
@@ -125,12 +126,12 @@ function Get-PwAsaSecurityPolicy {
 
                 Write-Verbose "$VerbosePrefix Creating new SecurityPolicy: $($NewObject.AccessList):$($NewObject.AclType):$n"
             }
-            
-            
-            
-            
 
-            
+
+
+
+
+
             $NewObject.Action = $Match.Groups['action'].Value
             $NewObject.Protocol = $Match.Groups['protocol'].Value
 
@@ -171,12 +172,12 @@ function Get-PwAsaSecurityPolicy {
                 $NewObject.Service = $NewObject.Protocol
             } else {
                 if ($NewObject.Service -match "\d+\ \d+") {
-                    $NewObject.Service = $NewObject.Protocol +'/' + ($NewObject.Service -replace ' ','-')
+                    $NewObject.Service = $NewObject.Protocol + '/' + ($NewObject.Service -replace ' ', '-')
                 }
             }
-            
-			continue
-		}
-	}	
-	return $ReturnArray
+
+            continue
+        }
+    }
+    return $ReturnArray
 }

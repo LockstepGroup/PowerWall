@@ -12,12 +12,19 @@ Class SecurityPolicy:ICloneable {
     [bool]$SourceNegate
 
     [string[]]$Destination
+
     [bool]$DestinationNegate
 
     [string]$Protocol
     [string]$SourcePort
     [string]$DestinationPort
     [string[]]$Service
+
+    [string]$ResolvedSource
+    [string]$ResolvedDestination
+    [string]$ResolvedSourcePort
+    [string]$ResolvedDestinationPort
+    [string]$ResolvedService
 
     [string]$Comment
     [string]$PacketState
