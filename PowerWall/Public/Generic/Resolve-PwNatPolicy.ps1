@@ -1,38 +1,48 @@
 function Resolve-PwNatPolicy {
     [CmdletBinding()]
     Param (
-        [Parameter(Mandatory = $True, Position = 0)]
-        [array]$Policy,
+        [Parameter(Mandatory = $True, ValueFromPipeline = $true, Position = 0)]
+        [NatPolicy]$Policy,
 
         [Parameter(Mandatory = $True, Position = 1)]
-        [array]$NetworkObjects,
+        [NetworkObject[]]$NetworkObjects,
 
         [Parameter(Mandatory = $True, Position = 2)]
-        [array]$ServiceObjects,
+        [ServiceObject[]]$ServiceObjects,
 
         [Parameter(Mandatory = $False)]
         [String]$FirewallType
     )
 
-    # It's nice to be able to see what cmdlet is throwing output isn't it?
-    $VerbosePrefix = "Resolve-PwNatPolicy:"
+    Begin {
+        # It's nice to be able to see what cmdlet is throwing output isn't it?
+        $VerbosePrefix = "Resolve-PwNatPolicy:"
+        $ReturnArray = @()
+    }
 
-    $ReturnArray = $Policy | Resolve-PolicyField -Addresses $NetworkObjects -FieldName 'OriginalSource' -FirewallType asa
-    $ReturnArray = $ReturnArray | Resolve-PolicyField -Addresses $NetworkObjects -FieldName 'OriginalDestination' -FirewallType asa
-    $ReturnArray = $Policy | Resolve-PolicyField -Addresses $NetworkObjects -FieldName 'TranslatedSource' -FirewallType asa
-    $ReturnArray = $ReturnArray | Resolve-PolicyField -Addresses $NetworkObjects -FieldName 'TranslatedDestination' -FirewallType asa
+    Process {
+        Write-Verbose "$VerbosePrefix Resolving OriginalSource, CurrentPolicy Count: $($Policy.Count)"
+        $ResolvedPolicy = $Policy | Resolve-PolicyField -Addresses $NetworkObjects -FieldName 'OriginalSource' -FirewallType asa
 
-    $ReturnArray = $ReturnArray | Resolve-PolicyField -Services $ServiceObjects -FieldName 'OriginalService' -FirewallType asa
-    $ReturnArray = $ReturnArray | Resolve-PolicyField -Services $ServiceObjects -FieldName 'TranslatedService' -FirewallType asa
+        Write-Verbose "$VerbosePrefix Resolving TranslatedSource, CurrentPolicy Count: $($ResolvedPolicy.Count)"
+        $ResolvedPolicy = $ResolvedPolicy | Resolve-PolicyField -Addresses $NetworkObjects -FieldName 'TranslatedSource' -FirewallType asa
 
-    $ReturnArray
+        Write-Verbose "$VerbosePrefix Resolving OriginalDestination, CurrentPolicy Count: $($ResolvedPolicy.Count)"
+        $ResolvedPolicy = $ResolvedPolicy | Resolve-PolicyField -Addresses $NetworkObjects -FieldName 'OriginalDestination' -FirewallType asa
+
+        Write-Verbose "$VerbosePrefix Resolving TranslatedDestination, CurrentPolicy Count: $($ResolvedPolicy.Count)"
+        $ResolvedPolicy = $ResolvedPolicy | Resolve-PolicyField -Addresses $NetworkObjects -FieldName 'TranslatedDestination' -FirewallType asa
+
+        Write-Verbose "$VerbosePrefix Resolving OriginalService, CurrentPolicy Count: $($ResolvedPolicy.Count)"
+        $ResolvedPolicy = $ResolvedPolicy | Resolve-PolicyField -Services $ServiceObjects -FieldName 'OriginalService' -FirewallType asa
+
+        Write-Verbose "$VerbosePrefix Resolving TranslatedService, CurrentPolicy Count: $($ResolvedPolicy.Count)"
+        $ResolvedPolicy = $ResolvedPolicy | Resolve-PolicyField -Services $ServiceObjects -FieldName 'TranslatedService' -FirewallType asa
+
+        $ReturnArray += $ResolvedPolicy
+    }
+
+    End {
+        $ReturnArray
+    }
 }
-
-<#
-OriginalSource             : vpn_iControl_Management
-OriginalDestination        : DM_INLINE_NETWORK_87
-OriginalService            :
-TranslatedSource           : vpn_iControl_Management
-TranslatedDestination      : DM_INLINE_NETWORK_87
-TranslatedService          :
- #>

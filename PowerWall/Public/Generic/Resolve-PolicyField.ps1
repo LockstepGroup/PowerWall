@@ -27,6 +27,8 @@ function Resolve-PolicyField {
     Begin {
         $VerbosePrefix = "Resolve-PolicyField:"
         $ResolvedFieldName = 'Resolved' + $FieldName
+        $OriginalFieldName = $FieldName -replace 'Translated', 'Original'
+        $TranslatedEqualsOrignal = $false
         $ReturnObject = @()
     }
 
@@ -37,31 +39,38 @@ function Resolve-PolicyField {
         } elseif ($NatPolicy) {
             $Policy = $NatPolicy
         }
-        $global:Policy = $Policy
-        $global:FieldName = $FieldName
+        $global:Policy = $Policytest
+        $global:FieldName = $FieldNametest
 
         if (($Policy.$FieldName.Count -gt 0) -and ("" -ne $Policy.$FieldName)) {
-            Write-Verbose "$VerbosePrefix Policy contains $($Policy.FieldName.Count) entries in Field: $FieldName"
-            switch -Regex ($FieldName) {
-                '(Source|Destination)' {
-                    Write-Verbose "$VerbosePrefix Resolving Address"
-                    $ResolvedField = Resolve-PwObject -ObjectToResolve $Policy.$FieldName -ObjectList $Addresses -FirewallType $FirewallType
-                }
-                'Service' {
-                    $ResolvedField = Resolve-PwObject -ObjectToResolve $Policy.$FieldName -ObjectList $Services -FirewallType $FirewallType
-                }
-                default {
-                    Throw "$VerbosePrefix FieldName not handled: $FieldName"
-                }
-            }
-
-            Write-Verbose "$VerbosePrefix $($Policy.$FieldName) resolves to $($ResolvedField.Count) objects"
-
-            foreach ($r in $ResolvedField) {
+            Write-Verbose "$VerbosePrefix Policy contains $($Policy.$FieldName.Count) entries in Field: $FieldName"
+            if (($FieldName -match 'Translated') -and ($Policy.$FieldName -eq $Policy.$OriginalFieldName)) {
                 $NewPolicy = $Policy.Clone()
                 $ReturnObject += $NewPolicy
 
-                $NewPolicy.$ResolvedFieldName = $r
+                $NewPolicy.$ResolvedFieldName = $Policy."ResolvedOriginal$FieldName"
+            } else {
+                switch -Regex ($FieldName) {
+                    '(Source|Destination)' {
+                        Write-Verbose "$VerbosePrefix Resolving Address"
+                        $ResolvedField = Resolve-PwObject -ObjectToResolve $Policy.$FieldName -ObjectList $Addresses -FirewallType $FirewallType
+                    }
+                    'Service' {
+                        $ResolvedField = Resolve-PwObject -ObjectToResolve $Policy.$FieldName -ObjectList $Services -FirewallType $FirewallType
+                    }
+                    default {
+                        Throw "$VerbosePrefix FieldName not handled: $FieldName"
+                    }
+                }
+
+                Write-Verbose "$VerbosePrefix $($Policy.$FieldName) resolves to $($ResolvedField.Count) objects"
+
+                foreach ($r in $ResolvedField) {
+                    $NewPolicy = $Policy.Clone()
+                    $ReturnObject += $NewPolicy
+
+                    $NewPolicy.$ResolvedFieldName = $r
+                }
             }
         } else {
             $NewPolicy = $Policy.Clone()

@@ -171,5 +171,18 @@ function Get-PwAsaNatPolicy {
             $NewObject.TranslatedSource = $Eval.Groups['transrc'].Value + '/' + (ConvertTo-MaskLength $Eval.Groups['mask'].Value)
         }
     }
+
+    foreach ($nat in $ReturnArray) {
+        # Nat Exempt Check
+        if ($nat.OriginalSource -eq $nat.TranslatedSource) {
+            if ($nat.OriginalDestination -eq $nat.TranslatedDestination) {
+                if ($nat.OriginalService -eq $nat.TranslatedService) {
+                    $global:NewObject = $nat
+                    $nat.NatExempt = $true
+                }
+            }
+        }
+    }
+
     return $ReturnArray
 }
