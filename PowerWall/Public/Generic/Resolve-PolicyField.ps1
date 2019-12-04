@@ -56,7 +56,7 @@ function Resolve-PolicyField {
                         $ResolvedField = Resolve-PwObject -ObjectToResolve $Policy.$FieldName -ObjectList $Addresses -FirewallType $FirewallType
                     }
                     'Service' {
-                        Write-Verbose "$VerbosePrefix Resolving Service"
+                        Write-Verbose "$VerbosePrefix Resolving Service for AccessList $($Policy.AccessList) number $($Policy.Number)"
                         $ResolvedField = Resolve-PwObject -ObjectToResolve $Policy.$FieldName -ObjectList $Services -FirewallType $FirewallType
                     }
                     default {
@@ -71,7 +71,12 @@ function Resolve-PolicyField {
                     $ReturnObject += $NewPolicy
 
                     if ($FieldName -eq 'Service') {
-                        $NewPolicy.$ResolvedFieldName = $r.Protocol + '/' + $r.DestinationPort
+
+                        if ($null -eq $r.Protocol) {
+                            $NewPolicy.$ResolvedFieldName = $Policy.Protocol + '/' + $r.DestinationPort
+                        } else {
+                            $NewPolicy.$ResolvedFieldName = $r.Protocol + '/' + $r.DestinationPort
+                        }
                     } else {
                         $NewPolicy.$ResolvedFieldName = $r
                     }

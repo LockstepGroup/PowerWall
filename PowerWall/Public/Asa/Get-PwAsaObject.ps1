@@ -233,7 +233,6 @@ function Get-PwAsaObject {
             }
 
             # service-object
-            $EvalParams.Regex = [regex] "^\ service-object\ (?<protocol>[^\ ]+)(\ (destination\ (?<operator>[^\ ]+)\ (?<port>[^\ ]+)(\ (?<upperport>[^\ ]+))?|(?<port>[^\ ]+)))?"
             $EvalParams.Regex = [regex] '^\ service-object\ (?<protocol>[^\ ]+)(?:\ (?:(?:destination\ )?(?<operator>[^\ ]+)\ (?<port>[^\ ]+)(?:\ (?<upperport>[^\ ]+))?|(?<port2>[^\ ]+)))?'
             # service-object udp destination range 35000 40000
             $Eval = Get-RegexMatch @EvalParams
@@ -245,7 +244,7 @@ function Get-PwAsaObject {
 
                 switch ($Protocol) {
                     'object' {
-                        $NewObject.Member += $Port
+                        $NewObject.Member += $Eval.Groups['port2'].Value
                         continue fileloop
                     }
                     'icmp' {
