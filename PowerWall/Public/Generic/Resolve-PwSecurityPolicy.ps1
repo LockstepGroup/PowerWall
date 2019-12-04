@@ -1,26 +1,38 @@
 function Resolve-PwSecurityPolicy {
     [CmdletBinding()]
     Param (
-        [Parameter(Mandatory = $True, Position = 0)]
-        [array]$Policy,
+        [Parameter(Mandatory = $True, ValueFromPipeline = $true, Position = 0)]
+        [SecurityPolicy]$Policy,
 
         [Parameter(Mandatory = $True, Position = 1)]
-        [array]$NetworkObjects,
+        [NetworkObject[]]$NetworkObjects,
 
         [Parameter(Mandatory = $True, Position = 2)]
-        [array]$ServiceObjects,
+        [ServiceObject[]]$ServiceObjects,
 
         [Parameter(Mandatory = $False)]
         [String]$FirewallType
     )
+    Begin {
+        # It's nice to be able to see what cmdlet is throwing output isn't it?
+        $VerbosePrefix = "Resolve-PwSecurityPolicy:"
+        $ReturnArray = @()
+    }
 
-    # It's nice to be able to see what cmdlet is throwing output isn't it?
-    $VerbosePrefix = "Resolve-PwSecurityPolicy:"
+    Process {
+        Write-Verbose "$VerbosePrefix Resolving OriginalSource, CurrentPolicy Count: $($Policy.Count)"
+        $ResolvedPolicy = $Policy | Resolve-PolicyField -Addresses $NetworkObjects -FieldName 'Source' -FirewallType asa
 
-    $ReturnArray = $Policy | Resolve-PolicyField -Addresses $NetworkObjects -FieldName 'Source' -FirewallType asa
-    $ReturnArray = $ReturnArray | Resolve-PolicyField -Addresses $NetworkObjects -FieldName 'Destination' -FirewallType asa
+        Write-Verbose "$VerbosePrefix Resolving TranslatedSource, CurrentPolicy Count: $($ResolvedPolicy.Count)"
+        $ResolvedPolicy = $ResolvedPolicy | Resolve-PolicyField -Addresses $NetworkObjects -FieldName 'Destination' -FirewallType asa
 
-    $ReturnArray = $ReturnArray | Resolve-PolicyField -Services $ServiceObjects -FieldName 'Service' -FirewallType asa
+        Write-Verbose "$VerbosePrefix Resolving OriginalService, CurrentPolicy Count: $($ResolvedPolicy.Count)"
+        $ResolvedPolicy = $ResolvedPolicy | Resolve-PolicyField -Services $ServiceObjects -FieldName 'Service' -FirewallType asa
 
-    $ReturnArray
+        $ReturnArray += $ResolvedPolicy
+    }
+
+    End {
+        $ReturnArray
+    }
 }

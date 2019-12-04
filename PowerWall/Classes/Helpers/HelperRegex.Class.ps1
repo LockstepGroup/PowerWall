@@ -3,7 +3,7 @@ class HelperRegex {
     static [string]$Ipv4Range = '\b((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)-((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b'
 
     # removed the restriction of not-starting with a digit
-    static [string]$Fqdn = '(?=^.{1,254}$)(^(?:(?!-)[a-zA-Z0-9\-]{1,63}(?<!-)\.?)+(?:[a-zA-Z]{2,})$)'
+    static [string]$Fqdn = '(?=^.{1,254}$)(^(?:(?!-)[a-zA-Z0-9\-]{1,63}(?<!-)\.)+(?:[a-zA-Z]{2,})$)'
 
     # function for checking regular expressions
     static [string] checkRegex([string]$matchString, [string]$regexString, [string]$errorMessage) {

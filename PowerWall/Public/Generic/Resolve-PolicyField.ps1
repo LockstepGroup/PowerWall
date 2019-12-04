@@ -48,7 +48,7 @@ function Resolve-PolicyField {
                 $NewPolicy = $Policy.Clone()
                 $ReturnObject += $NewPolicy
 
-                $NewPolicy.$ResolvedFieldName = $Policy."ResolvedOriginal$FieldName"
+                $NewPolicy.$ResolvedFieldName = $Policy."Resolved$OriginalFieldName"
             } else {
                 switch -Regex ($FieldName) {
                     '(Source|Destination)' {
@@ -56,6 +56,7 @@ function Resolve-PolicyField {
                         $ResolvedField = Resolve-PwObject -ObjectToResolve $Policy.$FieldName -ObjectList $Addresses -FirewallType $FirewallType
                     }
                     'Service' {
+                        Write-Verbose "$VerbosePrefix Resolving Service"
                         $ResolvedField = Resolve-PwObject -ObjectToResolve $Policy.$FieldName -ObjectList $Services -FirewallType $FirewallType
                     }
                     default {
@@ -69,7 +70,11 @@ function Resolve-PolicyField {
                     $NewPolicy = $Policy.Clone()
                     $ReturnObject += $NewPolicy
 
-                    $NewPolicy.$ResolvedFieldName = $r
+                    if ($FieldName -eq 'Service') {
+                        $NewPolicy.$ResolvedFieldName = $r.Protocol + '/' + $r.DestinationPort
+                    } else {
+                        $NewPolicy.$ResolvedFieldName = $r
+                    }
                 }
             }
         } else {

@@ -1,60 +1,67 @@
 function Get-PwAsaInterface {
     [CmdletBinding()]
-	<#
+    <#
         .SYNOPSIS
             Gets named addresses from saved ASA config file.
 	#>
 
-	Param (
-		[Parameter(Mandatory=$True,Position=0)]
-		[array]$ConfigPath
-	)
-    
+    Param (
+        [Parameter(Mandatory = $True, Position = 0, ParameterSetName = 'path')]
+        [string]$ConfigPath,
+
+        [Parameter(Mandatory = $True, Position = 0, ParameterSetName = 'array')]
+        [array]$ConfigArray
+    )
+
     # It's nice to be able to see what cmdlet is throwing output isn't it?
     $VerbosePrefix = "Get-PwAsaInterface:"
-    
+
     # Check for path and import
-    if (Test-Path $ConfigPath) {
-        $LoopArray = Get-Content $ConfigPath
+    if ($ConfigPath) {
+        if (Test-Path $ConfigPath) {
+            $LoopArray = Get-Content $ConfigPath
+        }
+    } else {
+        $LoopArray = $ConfigArray
     }
 
     # Setup return Array
     $ReturnArray = @()
-	
+
     $IpRx = [regex] "(\d+)\.(\d+)\.(\d+)\.(\d+)"
-	
-	$TotalLines = $LoopArray.Count
-	$i          = 0 
-	$StopWatch  = [System.Diagnostics.Stopwatch]::StartNew() # used by Write-Progress so it doesn't slow the whole function down
-	
-	:fileloop foreach ($entry in $LoopArray) {
-		$i++
-		
-		# Write progress bar, we're only updating every 1000ms, if we do it every line it takes forever
-		
-		if ($StopWatch.Elapsed.TotalMilliseconds -ge 1000) {
-			$PercentComplete = [math]::truncate($i / $TotalLines * 100)
-	        Write-Progress -Activity "Reading Support Output" -Status "$PercentComplete% $i/$TotalLines" -PercentComplete $PercentComplete
-	        $StopWatch.Reset()
-			$StopWatch.Start()
-		}
-		
-		if ($entry -eq "") { continue }
-		
-		###########################################################################################
+
+    $TotalLines = $LoopArray.Count
+    $i = 0
+    $StopWatch = [System.Diagnostics.Stopwatch]::StartNew() # used by Write-Progress so it doesn't slow the whole function down
+
+    :fileloop foreach ($entry in $LoopArray) {
+        $i++
+
+        # Write progress bar, we're only updating every 1000ms, if we do it every line it takes forever
+
+        if ($StopWatch.Elapsed.TotalMilliseconds -ge 1000) {
+            $PercentComplete = [math]::truncate($i / $TotalLines * 100)
+            Write-Progress -Activity "Reading Support Output" -Status "$PercentComplete% $i/$TotalLines" -PercentComplete $PercentComplete
+            $StopWatch.Reset()
+            $StopWatch.Start()
+        }
+
+        if ($entry -eq "") { continue }
+
+        ###########################################################################################
         # Check for the Section
-        
+
         $EvalParams = @{}
         $EvalParams.StringToEval = $entry
 
         $EvalParams.Regex = [regex] "^interface\ (.+)"
-        $Eval             = Get-RegexMatch @EvalParams -ReturnGroupNum 1
-		if ($Eval) {
+        $Eval = Get-RegexMatch @EvalParams -ReturnGroupNum 1
+        if ($Eval) {
             $KeepGoing = $true
-                        
-            $NewObject    = [Interface]::new()
+
+            $NewObject = [Interface]::new()
             $ReturnArray += $NewObject
-            
+
             $NewObject.Name = $Eval
             continue
         }
@@ -70,16 +77,16 @@ function Get-PwAsaInterface {
         if ($Match) {
             continue
         }
-        
+
         # End object
         $Regex = [regex] "^[^\ ]"
-		$Match = Get-RegexMatch $Regex $entry
+        $Match = Get-RegexMatch $Regex $entry
         if ($Match) {
             $KeepGoing = $false
             $Protocol = $null
         }
-        
-        
+
+
         if ($KeepGoing) {
             # Special Properties
             $EvalParams = @{}
@@ -87,7 +94,7 @@ function Get-PwAsaInterface {
 
             # ip address
             $EvalParams.Regex = [regex] "^\ ip\ address\ (?<ip>$IpRx)\ (?<mask>$IpRx)"
-            $Eval             = Get-RegexMatch @EvalParams
+            $Eval = Get-RegexMatch @EvalParams
             if ($Eval) {
                 $NewObject.IpAddress = $Eval.Groups['ip'].Value
                 $NewObject.IpAddress += (ConvertTo-MaskLength $Eval.Groups['mask'].Value)
@@ -99,7 +106,7 @@ function Get-PwAsaInterface {
 
             # speed
             $EvalParams.Regex = [regex] "^\ speed\ (\d+)"
-            $Eval             = Get-RegexMatch @EvalParams
+            $Eval = Get-RegexMatch @EvalParams
             if ($Eval) {
                 $NewObject.Speed = $Eval
                 continue
@@ -107,7 +114,7 @@ function Get-PwAsaInterface {
 
             # duplex
             $EvalParams.Regex = [regex] "^\ duplex\ (.+)"
-            $Eval             = Get-RegexMatch @EvalParams
+            $Eval = Get-RegexMatch @EvalParams
             if ($Eval) {
                 $NewObject.Duplex = $Eval
                 continue
@@ -115,7 +122,7 @@ function Get-PwAsaInterface {
 
             # nameif
             $EvalParams.Regex = [regex] "^\ nameif\ (.+)"
-            $Eval             = Get-RegexMatch @EvalParams
+            $Eval = Get-RegexMatch @EvalParams
             if ($Eval) {
                 $NewObject.Nameif = $Eval
                 continue
@@ -123,7 +130,7 @@ function Get-PwAsaInterface {
 
             # security-level
             $EvalParams.Regex = [regex] "^\ security-level\ (.+)"
-            $Eval             = Get-RegexMatch @EvalParams
+            $Eval = Get-RegexMatch @EvalParams
             if ($Eval) {
                 $NewObject.SecurityLevel = $Eval
                 continue
@@ -135,7 +142,7 @@ function Get-PwAsaInterface {
         $EvalParams.StringToEval = $entry
 
         $EvalParams.Regex = [regex] "^access-group\ (?<acl>[^\ ]+?)\ (?<dir>[^\ ]+?)\ interface\ (?<int>.+)"
-        $Eval             = Get-RegexMatch @EvalParams
+        $Eval = Get-RegexMatch @EvalParams
         if ($Eval) {
             Write-Verbose "$VerbosePrefix $entry"
             $Interface = $Eval.Groups['int'].Value
@@ -147,6 +154,6 @@ function Get-PwAsaInterface {
 
             continue
         }
-	}	
-	return $ReturnArray
+    }
+    return $ReturnArray
 }

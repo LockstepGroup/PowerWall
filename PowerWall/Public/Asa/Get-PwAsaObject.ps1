@@ -6,16 +6,23 @@ function Get-PwAsaObject {
 	#>
 
     Param (
-        [Parameter(Mandatory = $True, Position = 0)]
-        [array]$ConfigPath
+        [Parameter(Mandatory = $True, Position = 0, ParameterSetName = 'path')]
+        [string]$ConfigPath,
+
+        [Parameter(Mandatory = $True, Position = 0, ParameterSetName = 'array')]
+        [array]$ConfigArray
     )
 
     # It's nice to be able to see what cmdlet is throwing output isn't it?
     $VerbosePrefix = "Get-PwAsaObject:"
 
     # Check for path and import
-    if (Test-Path $ConfigPath) {
-        $LoopArray = Get-Content $ConfigPath
+    if ($ConfigPath) {
+        if (Test-Path $ConfigPath) {
+            $LoopArray = Get-Content $ConfigPath
+        }
+    } else {
+        $LoopArray = $ConfigArray
     }
 
     # Setup return Array
@@ -40,6 +47,28 @@ function Get-PwAsaObject {
         }
 
         if ($entry -eq "") { continue }
+
+        ###########################################################################################
+        # name objects
+        $EvalParams = @{ }
+        $EvalParams.StringToEval = $entry
+        $EvalParams.Regex = [regex] "^name\ (?<ip>(?:\d+\.){3}\d+)\ (?<name>[^\ ]+)(?:\ description\ (?<description>.+))?"
+        $Eval = Get-RegexMatch @EvalParams
+        if ($Eval) {
+            $Value = $Eval.Groups['ip'].Value
+            if ($Value -match '\.0$') {
+                $Value += '/24'
+                # this isn't quite right but I can't figure out how to determine the correct mask from the config file.
+            } else {
+                $Value += '/32'
+            }
+
+            $NewObject = [NetworkObject]::new()
+            $NewObject.Name = $Eval.Groups['name'].Value
+            $NewObject.Member += $Value
+            $NewObject.Comment += $Eval.Groups['description'].Value
+            $ReturnArray += $NewObject
+        }
 
         ###########################################################################################
         # Check for the Section
@@ -108,7 +137,7 @@ function Get-PwAsaObject {
 
         if ($KeepGoing) {
             # Special Properties
-            $EvalParams = @{}
+            $EvalParams = @{ }
             $EvalParams.StringToEval = $entry
 
             # fqdn
@@ -157,14 +186,14 @@ function Get-PwAsaObject {
             $Eval = Get-RegexMatch @EvalParams
             if ($Eval) {
                 $Operator = $Eval.Groups['operator'].Value
-                $Port = Resolve-BuiltinService $Eval.Groups['port'].Value 'asa'
+                $Port = (Resolve-BuiltinService $Eval.Groups['port'].Value 'asa').DestinationPort
 
                 switch ($Operator) {
                     "eq" {
                         $NewObject.Member += $Protocol + '/' + $Port
                     }
                     "range" {
-                        $EndPort = Resolve-BuiltinService $Eval.Groups['endport'].Value 'asa'
+                        $EndPort = (Resolve-BuiltinService $Eval.Groups['endport'].Value 'asa').DestinationPort
                         $NewObject.Member += $Protocol + '/' + $Port + '-' + $EndPort
                     }
                 }
@@ -205,6 +234,7 @@ function Get-PwAsaObject {
 
             # service-object
             $EvalParams.Regex = [regex] "^\ service-object\ (?<protocol>[^\ ]+)(\ (destination\ (?<operator>[^\ ]+)\ (?<port>[^\ ]+)(\ (?<upperport>[^\ ]+))?|(?<port>[^\ ]+)))?"
+            $EvalParams.Regex = [regex] '^\ service-object\ (?<protocol>[^\ ]+)(?:\ (?:(?:destination\ )?(?<operator>[^\ ]+)\ (?<port>[^\ ]+)(?:\ (?<upperport>[^\ ]+))?|(?<port2>[^\ ]+)))?'
             # service-object udp destination range 35000 40000
             $Eval = Get-RegexMatch @EvalParams
             if ($Eval) {
@@ -226,7 +256,7 @@ function Get-PwAsaObject {
                     default {
                         if ($Eval.Groups['port'].Success) {
                             if ($Protocol -ne "icmp") {
-                                $Port = Resolve-BuiltinService -Service $Port -FirewallType 'asa'
+                                $Port = (Resolve-BuiltinService -Service $Port -FirewallType 'asa').DestinationPort
                             }
                         }
                     }
@@ -241,8 +271,8 @@ function Get-PwAsaObject {
                 }
 
                 switch ($Operator) {
-                    "eq" {}
-                    "none" {}
+                    "eq" { }
+                    "none" { }
                     "default" { Throw "$VerbosePrefix service-object operator `"$Operator`" not handled`r`n $entry" }
                 }
 
@@ -274,10 +304,10 @@ function Get-PwAsaObject {
                         'neq' { $SourcePort = "!$SourcePort" }
                         'lt' { $SourcePort = "lt$SourcePort" }
                         'gt' { $SourcePort = "gt$SourcePort" }
-                        'range' { $SourcePort = $SourcePort -replace ' ', '-'}
-                        default {}
+                        'range' { $SourcePort = $SourcePort -replace ' ', '-' }
+                        default { }
                     }
-                    $NewObject.Member = $Protocol + '/' + (Resolve-BuiltinService $SourcePort asa)
+                    $NewObject.Member = $Protocol + '/' + (Resolve-BuiltinService $SourcePort asa).DestinationPort
                 }
 
                 if ($DestinationPort) {
@@ -286,10 +316,10 @@ function Get-PwAsaObject {
                         'neq' { $DestinationPort = "!$DestinationPort" }
                         'lt' { $DestinationPort = "lt$DestinationPort" }
                         'gt' { $DestinationPort = "gt$DestinationPort" }
-                        'range' { $DestinationPort = $DestinationPort -replace ' ', '-'}
-                        default {}
+                        'range' { $DestinationPort = $DestinationPort -replace ' ', '-' }
+                        default { }
                     }
-                    $FullPort = $Protocol + '/' + (Resolve-BuiltinService $DestinationPort asa)
+                    $FullPort = $Protocol + '/' + (Resolve-BuiltinService $DestinationPort asa).DestinationPort
                     if ($UpperDestinationPort) {
                         $FullPort += "-$UpperDestinationPort"
                     }

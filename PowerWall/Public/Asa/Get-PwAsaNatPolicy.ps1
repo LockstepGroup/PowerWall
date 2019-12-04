@@ -6,16 +6,23 @@ function Get-PwAsaNatPolicy {
 	#>
 
     Param (
-        [Parameter(Mandatory = $True, Position = 0)]
-        [string]$ConfigPath
+        [Parameter(Mandatory = $True, Position = 0, ParameterSetName = 'path')]
+        [string]$ConfigPath,
+
+        [Parameter(Mandatory = $True, Position = 0, ParameterSetName = 'array')]
+        [array]$ConfigArray
     )
 
     # It's nice to be able to see what cmdlet is throwing output isn't it?
     $VerbosePrefix = "Get-PwAsaNatPolicy:"
 
     # Check for path and import
-    if (Test-Path $ConfigPath) {
-        $LoopArray = Get-Content $ConfigPath
+    if ($ConfigPath) {
+        if (Test-Path $ConfigPath) {
+            $LoopArray = Get-Content $ConfigPath
+        }
+    } else {
+        $LoopArray = $ConfigArray
     }
 
     # Get Network Objects to resolve network nat
@@ -30,6 +37,7 @@ function Get-PwAsaNatPolicy {
     $ReturnArray = @()
 
     $IpRx = [regex] "(\d+)\.(\d+)\.(\d+)\.(\d+)"
+    $JustIpRx = [regex] '^(\d+)\.(\d+)\.(\d+)\.(\d+)$'
 
     $TotalLines = $LoopArray.Count
     $i = 0
@@ -81,10 +89,15 @@ function Get-PwAsaNatPolicy {
                             Write-Verbose "$VerbosePrefix $entry"
 
                             $NewObject.Number = $n
+                            $NewObject.Name = $object.Name
                             $NewObject.SourceInterface = $object.NatSourceInterface
                             $NewObject.DestinationInterface = $object.NatDestinationInterface
                             $NewObject.OriginalSource = $object.Member
-                            $NewObject.TranslatedSource = $object.NatSourceAddress
+                            if ($JustIpRx.Match($object.NatSourceAddress).Success) {
+                                $NewObject.TranslatedSource = $object.NatSourceAddress + '/32'
+                            } else {
+                                $NewObject.TranslatedSource = $object.NatSourceAddress
+                            }
                             $NewObject.SourceTranslationType = 'ObjectNat'
                             $NetworkObjectsWithNatNeeded = $false
                         }

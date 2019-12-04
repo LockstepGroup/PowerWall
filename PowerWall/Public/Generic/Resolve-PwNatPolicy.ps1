@@ -39,6 +39,17 @@ function Resolve-PwNatPolicy {
         Write-Verbose "$VerbosePrefix Resolving TranslatedService, CurrentPolicy Count: $($ResolvedPolicy.Count)"
         $ResolvedPolicy = $ResolvedPolicy | Resolve-PolicyField -Services $ServiceObjects -FieldName 'TranslatedService' -FirewallType asa
 
+        foreach ($nat in $ResolvedPolicy) {
+            # Nat Exempt Check
+            if ($nat.ResolvedOriginalSource -eq $nat.ResolvedTranslatedSource) {
+                if ($nat.ResolvedOriginalDestination -eq $nat.ResolvedTranslatedDestination) {
+                    if ($nat.ResolvedOriginalService -eq $nat.ResolvedTranslatedService) {
+                        $nat.NatExempt = $true
+                    }
+                }
+            }
+        }
+
         $ReturnArray += $ResolvedPolicy
     }
 

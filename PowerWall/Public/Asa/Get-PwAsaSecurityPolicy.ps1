@@ -173,6 +173,8 @@ function Get-PwAsaSecurityPolicy {
             } else {
                 if ($NewObject.Service -match "\d+\ \d+") {
                     $NewObject.Service = $NewObject.Protocol + '/' + ($NewObject.Service -replace ' ', '-')
+                } elseif ($NewObject.Service -match '^\d+$') {
+                    $NewObject.Service = $NewObject.Protocol + '/' + $NewObject.Service
                 }
             }
 

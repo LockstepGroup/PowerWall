@@ -1,5 +1,6 @@
 Class NatPolicy:ICloneable {
     [int]$Number
+    [string]$Name
     [string]$Comment
     [bool]$Enabled
 
