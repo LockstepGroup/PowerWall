@@ -10,6 +10,8 @@ Class ServiceObject {
     [string]$ResolvedMember
     [string[]]$MemberOf
 
+    [string]$Vdom
+
     ##################################### Initiators #####################################
     # Empty Initiator
     ServiceObject() {

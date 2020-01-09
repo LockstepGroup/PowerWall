@@ -1,4 +1,4 @@
-function Get-PwFgServiceObject {
+function Get-PwFgNetworkObject {
     [CmdletBinding()]
     <#
         .SYNOPSIS
@@ -14,7 +14,7 @@ function Get-PwFgServiceObject {
     )
 
     # It's nice to be able to see what cmdlet is throwing output isn't it?
-    $VerbosePrefix = "Get-PwFgServiceObject:"
+    $VerbosePrefix = "Get-PwFgNetworkObject:"
 
     # Check for path and import
     if ($ConfigPath) {
@@ -28,8 +28,16 @@ function Get-PwFgServiceObject {
     # Setup return Array
     $ReturnArray = @()
     $SectionRegex = @()
-    $SectionRegex += '^config\ firewall\ service\ custom'
-    $SectionRegex += '^config\ firewall\ service\ group'
+    $SectionRegex += '^config\ firewall\ address$'
+    $SectionRegex += '^config\ firewall\ addrgrp$'
+
+    $IgnoredRegex = @()
+    $IgnoredRegex += '^\s+next$'
+    $IgnoredRegex += '^\s+set\ visibility\ disable$'
+    $IgnoredRegex += '^\s+set\ uuid\ .+'
+    $IgnoredRegex += '^\s+set\ color\ \d+'
+    $IgnoredRegex += '^\s+set\ type\ iprange'
+    $IgnoredRegex += '^\s+set\ associated-interface\ ".+"'
 
     $IpRx = [regex] "(\d+)\.(\d+)\.(\d+)\.(\d+)"
 
@@ -52,7 +60,8 @@ function Get-PwFgServiceObject {
         if ($entry -eq "") { continue }
 
         ###########################################################################################
-        # Setup
+        # Check for the Section
+
         $EvalParams = @{ }
         $EvalParams.StringToEval = $entry
 
@@ -96,12 +105,6 @@ function Get-PwFgServiceObject {
         if ($InSection) {
             #region ignoredregex
             ################################################
-            $IgnoredRegex = @()
-            $IgnoredRegex += '^\s+next$'
-            $IgnoredRegex += '^\s+set\ visibility\ disable$'
-            $IgnoredRegex += '^\s+unset\ icmpcode$'
-            $IgnoredRegex += '^\s+set\ proxy\ enable$'
-
             foreach ($regex in $IgnoredRegex) {
                 $EvalParams.Regex = [regex] $regex
                 $Eval = Get-RegexMatch @EvalParams
@@ -125,7 +128,7 @@ function Get-PwFgServiceObject {
             $EvalParams.Regex = [regex] '^\ +edit\ "(.+?)"'
             $Eval = Get-RegexMatch @EvalParams -ReturnGroupNumber 1
             if ($Eval) {
-                $NewObject = [ServiceObject]::new()
+                $NewObject = [NetworkObject]::new()
                 $ReturnArray += $NewObject
 
                 $NewObject.Name = $Eval
@@ -133,43 +136,13 @@ function Get-PwFgServiceObject {
                 continue
             }
 
-            # set tcp-portrange 5190-5194
-            # set udp-portrange 67-68
-            # set udp-portrange 53
-            $EvalParams.Regex = [regex] '^\ +set\ (?<protocol>tcp|udp)-portrange\ (?<range>\d+(-\d+)?)'
+            # set ip 192.0.2.1 255.255.255.0
+            $EvalParams.Regex = [regex] '^\ +set\ subnet\ (?<address>[^\ ]+)\ (?<mask>[^\ ]+)'
             $Eval = Get-RegexMatch @EvalParams
             if ($Eval) {
-                $Protocol = $Eval.Groups['protocol'].Value
-                $Range = $Eval.Groups['range'].Value
-                $NewObject.DestinationPort = $Protocol + '/' + $Range
-                continue
-            }
-
-            # set protocol-number 47
-            $EvalParams.Regex = [regex] '^\s+set\ protocol-number\ (\d+)'
-            $Eval = Get-RegexMatch @EvalParams -ReturnGroupNumber 1
-            if ($Eval) {
-                $NewObject.DestinationPort = $NewObject.Protocol.ToLower() + '/' + $Eval
-                continue
-            }
-
-            # unset icmptype
-            $EvalParams.Regex = [regex] '^\s+unset\ icmptype'
-            $Eval = Get-RegexMatch @EvalParams
-            if ($Eval) {
-                if ($NewObject.Protocol -match '^ICMP6?$') {
-                    $NewObject.DestinationPort = 'icmp/all'
-                }
-                continue
-            }
-
-            # set icmptype 8
-            $EvalParams.Regex = [regex] '^\s+set\ icmptype\ (\d+)'
-            $Eval = Get-RegexMatch @EvalParams -ReturnGroupNumber 1
-            if ($Eval) {
-                if ($NewObject.Protocol -match '^ICMP6?$') {
-                    $NewObject.DestinationPort = 'icmp/' + $Eval
-                }
+                $Address = $Eval.Groups['address'].Value
+                $MaskLength = ConvertTo-MaskLength $Eval.Groups['mask'].Value
+                $NewObject.Member += $Address + '/' + $MaskLength
                 continue
             }
 
@@ -181,6 +154,25 @@ function Get-PwFgServiceObject {
                 continue
             }
 
+            # set start-ip 192.0.2.1
+            $EvalParams.Regex = [regex] '^\s+set\ start-ip\ (.+)'
+            $Eval = Get-RegexMatch @EvalParams -ReturnGroupNumber 1
+            if ($Eval) {
+                $StartIp = $Eval
+                continue
+            }
+
+            if ($StartIp) {
+                # set end-ip 192.0.2.255
+                $EvalParams.Regex = [regex] '^\s+set\ end-ip\ (.+)'
+                $Eval = Get-RegexMatch @EvalParams -ReturnGroupNumber 1
+                if ($Eval) {
+                    $NewObject.Member += $StartIp + '-' + $Eval
+                    $StartIp = $null
+                    continue
+                }
+            }
+
             #region simpleprops
             ################################################
             if ($NewObject) {
@@ -189,15 +181,6 @@ function Get-PwFgServiceObject {
                 $EvalParams.LoopName = 'fileloop'
                 $EvalParams.Verbose = $false
 
-                # set protocol IP
-                $EvalParams.ObjectProperty = "Protocol"
-                $EvalParams.Regex = [regex] '^\s+set\ protocol\ (.+)'
-                $Eval = Get-RegexMatch @EvalParams
-
-                # set category "General"
-                $EvalParams.ObjectProperty = "Category"
-                $EvalParams.Regex = [regex] '^\s+set\ category\ "(.+?)"'
-                $Eval = Get-RegexMatch @EvalParams
             }
             ################################################
             #endregion simpleprops

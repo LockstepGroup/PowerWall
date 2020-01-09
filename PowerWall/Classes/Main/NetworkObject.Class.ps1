@@ -11,4 +11,6 @@ Class NetworkObject {
     [string]$NatDestinationInterface
     [string]$NatType
     [string]$NatSourceAddress
+
+    [string]$Vdom
 }
