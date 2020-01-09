@@ -57,27 +57,141 @@ function Get-PwFgInterface {
         $EvalParams.Regex = [regex] "^config\ system\ interface"
         $Eval = Get-RegexMatch @EvalParams
         if ($Eval) {
-            Write-Verbose "$VerbosePrefix Section Start"
+            Write-Verbose "$VerbosePrefix $i Section Start"
             $InSection = $true
             continue
         }
 
         if ($InSection) {
+            #region ignoredregex
+            ################################################
+            $EvalParams.Regex = [regex] '^\s+next$'
+            $Eval = Get-RegexMatch @EvalParams
+            if ($Eval) {
+                continue
+            }
+
+            $EvalParams.Regex = [regex] '^\s+set\ snmp-index\ \d+'
+            $Eval = Get-RegexMatch @EvalParams
+            if ($Eval) {
+                continue
+            }
+            ################################################
+            #endregion ignoredregex
+
 
             # Section Ends
             $EvalParams.Regex = [regex] '^end$'
             $Eval = Get-RegexMatch @EvalParams
             if ($Eval) {
-                Write-Verbose "$VerbosePrefix Section End"
+                Write-Verbose "$VerbosePrefix $i Section End"
                 $InSection = $false
+                break
+            }
+
+            # start interface entry
+            $EvalParams.Regex = [regex] '^\ +edit\ "(.+?)"'
+            $Eval = Get-RegexMatch @EvalParams -ReturnGroupNumber 1
+            if ($Eval) {
+                $NewObject = [Interface]::new()
+                $ReturnArray += $NewObject
+
+                $NewObject.Name = $Eval
                 continue
             }
+
+            # set mode dhcp
+            $EvalParams.Regex = [regex] '^\ +set\ mode\ dhcp'
+            $Eval = Get-RegexMatch @EvalParams
+            if ($Eval) {
+                $NewObject.IsDhcpClient = $true
+                continue
+            }
+
+            # set mode pppoe
+            $EvalParams.Regex = [regex] '^\ +set\ mode\ pppoe'
+            $Eval = Get-RegexMatch @EvalParams
+            if ($Eval) {
+                $NewObject.IsPPPoE = $true
+                continue
+            }
+
+            # set dedicated-to management
+            $EvalParams.Regex = [regex] '^\ +set\ dedicated-to\ management'
+            $Eval = Get-RegexMatch @EvalParams
+            if ($Eval) {
+                $NewObject.IsManagement = $true
+                continue
+            }
+
+            # set allowaccess ping https http fgfm capwap
+            $EvalParams.Regex = [regex] '^\ +set\ allowaccess\ (.+)'
+            $Eval = Get-RegexMatch @EvalParams -ReturnGroupNumber 1
+            if ($Eval) {
+                $NewObject.AllowedMgmtMethods = $Eval.Split()
+                continue
+            }
+
+            # set member "port3" "port4"
+            $EvalParams.Regex = [regex] '^\ +set\ member\ (.+)'
+            $Eval = Get-RegexMatch @EvalParams -ReturnGroupNumber 1
+            if ($Eval) {
+                $NewObject.AggregateMember = ($Eval -replace '"', '').Split()
+                continue
+            }
+
+            # set ip 167.193.89.166 255.255.255.128
+            $EvalParams.Regex = [regex] '^\ +set\ ip\ (?<address>[^\ ]+)\ (?<mask>[^\ ]+)'
+            $Eval = Get-RegexMatch @EvalParams
+            if ($Eval) {
+                $Address = $Eval.Groups['address'].Value
+                $MaskLength = ConvertTo-MaskLength $Eval.Groups['mask'].Value
+                $NewObject.IpAddress = $Address + '/' + $MaskLength
+                continue
+            }
+
+            #region simpleprops
+            ################################################
+            $EvalParams.VariableToUpdate = ([REF]$NewObject)
+            $EvalParams.ReturnGroupNum = 1
+            $EvalParams.LoopName = 'fileloop'
+            $EvalParams.Verbose = $false
+
+            # set vdom "root"
+            $EvalParams.ObjectProperty = "Vdom"
+            $EvalParams.Regex = [regex] '^\s+set\ vdom\ "(.+?)"'
+            $Eval = Get-RegexMatch @EvalParams
+
+            # set type physical
+            $EvalParams.ObjectProperty = "InterfaceType"
+            $EvalParams.Regex = [regex] '^\s+set\ type\ (.+)'
+            $Eval = Get-RegexMatch @EvalParams
+
+            # set vlanid 70
+            $EvalParams.ObjectProperty = "VlanId"
+            $EvalParams.Regex = [regex] '^\s+set\ vlanid\ (\d+)'
+            $Eval = Get-RegexMatch @EvalParams
+
+            # set interface "Parent Interface"
+            $EvalParams.ObjectProperty = "ParentInterface"
+            $EvalParams.Regex = [regex] '^\s+set\ interface\ "(.+?)"'
+            $Eval = Get-RegexMatch @EvalParams
+
+            # set description "Description"
+            $EvalParams.ObjectProperty = "Comment"
+            $EvalParams.Regex = [regex] '^\s+set\ description\ "(.+?)"'
+            $Eval = Get-RegexMatch @EvalParams
+
+            ################################################
+            #endregion simpleprops
+
+            Write-Verbose "VerbosePrefix $i $entry"
         }
         <#
         $EvalParams.Regex = [regex] "^interface\ (.+)"
-        $Eval = Get-RegexMatch @EvalParams -ReturnGroupNum 1
+        $Eva$KeepGoing = $true
+        l = Get-RegexMatch @EvalParams -ReturnGroupNum 1
         if ($Eval) {
-            $KeepGoing = $true
 
             $NewObject = [Interface]::new()
             $ReturnArray += $NewObject

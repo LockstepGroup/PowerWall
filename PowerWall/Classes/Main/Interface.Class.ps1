@@ -10,4 +10,13 @@ Class Interface {
     [string]$Duplex
     [string]$AccessList
     [string]$AccessListDirection
+    [string]$Vdom
+    [bool]$IsDhcpClient
+    [string[]]$AllowedMgmtMethods
+    [int]$VlanId
+    [string]$ParentInterface
+    [string]$InterfaceType
+    [string[]]$AggregateMember
+    [bool]$IsManagement
+    [bool]$IsPPPoE
 }
