@@ -83,7 +83,7 @@ function Get-PwAsaSecurityPolicy {
                     )?
 
                     # flags
-                    (?<log>\ log\ (?<loglevel>\w+))?
+                    (?<log>\ log(\ (?<loglevel>\d+))?)?
                     (?<inactive>\ inactive)?
                 |
                     (?<type>standard)\s
