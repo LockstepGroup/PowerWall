@@ -2,6 +2,7 @@ Class ServiceObject {
     static [string] $Type = "Service"
     [string]$Name
     [string]$Comment
+    [string]$Category
     [string]$Protocol
     [string[]]$SourcePort
     [string[]]$DestinationPort
