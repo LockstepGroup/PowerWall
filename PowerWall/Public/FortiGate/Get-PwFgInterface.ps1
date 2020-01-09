@@ -140,7 +140,7 @@ function Get-PwFgInterface {
                 continue
             }
 
-            # set ip 167.193.89.166 255.255.255.128
+            # set ip 192.0.2.1 255.255.255.0
             $EvalParams.Regex = [regex] '^\ +set\ ip\ (?<address>[^\ ]+)\ (?<mask>[^\ ]+)'
             $Eval = Get-RegexMatch @EvalParams
             if ($Eval) {
@@ -185,109 +185,8 @@ function Get-PwFgInterface {
             ################################################
             #endregion simpleprops
 
-            Write-Verbose "VerbosePrefix $i $entry"
+            Write-Warning "VerbosePrefix $i UNHANDLED: $entry"
         }
-        <#
-        $EvalParams.Regex = [regex] "^interface\ (.+)"
-        $Eva$KeepGoing = $true
-        l = Get-RegexMatch @EvalParams -ReturnGroupNum 1
-        if ($Eval) {
-
-            $NewObject = [Interface]::new()
-            $ReturnArray += $NewObject
-
-            $NewObject.Name = $Eval
-            continue
-        }
-
-        #More prompts and blank lines
-        $Regex = [regex] '^<'
-        $Match = Get-RegexMatch $Regex $entry
-        if ($Match) {
-            continue
-        }
-        $Regex = [regex] '^\s+$'
-        $Match = Get-RegexMatch $Regex $entry
-        if ($Match) {
-            continue
-        }
-
-        # End object
-        $Regex = [regex] "^[^\ ]"
-        $Match = Get-RegexMatch $Regex $entry
-        if ($Match) {
-            $KeepGoing = $false
-            $Protocol = $null
-        }
-
-
-        if ($KeepGoing) {
-            # Special Properties
-            $EvalParams = @{ }
-            $EvalParams.StringToEval = $entry
-
-            # ip address
-            $EvalParams.Regex = [regex] "^\ ip\ address\ (?<ip>$IpRx)\ (?<mask>$IpRx)"
-            $Eval = Get-RegexMatch @EvalParams
-            if ($Eval) {
-                $NewObject.IpAddress = $Eval.Groups['ip'].Value
-                $NewObject.IpAddress += (ConvertTo-MaskLength $Eval.Groups['mask'].Value)
-                continue
-            }
-
-            # Simple Properties
-            $EvalParams.ReturnGroupNum = 1
-
-            # speed
-            $EvalParams.Regex = [regex] "^\ speed\ (\d+)"
-            $Eval = Get-RegexMatch @EvalParams
-            if ($Eval) {
-                $NewObject.Speed = $Eval
-                continue
-            }
-
-            # duplex
-            $EvalParams.Regex = [regex] "^\ duplex\ (.+)"
-            $Eval = Get-RegexMatch @EvalParams
-            if ($Eval) {
-                $NewObject.Duplex = $Eval
-                continue
-            }
-
-            # nameif
-            $EvalParams.Regex = [regex] "^\ nameif\ (.+)"
-            $Eval = Get-RegexMatch @EvalParams
-            if ($Eval) {
-                $NewObject.Nameif = $Eval
-                continue
-            }
-
-            # security-level
-            $EvalParams.Regex = [regex] "^\ security-level\ (.+)"
-            $Eval = Get-RegexMatch @EvalParams
-            if ($Eval) {
-                $NewObject.SecurityLevel = $Eval
-                continue
-            }
-        }
-
-        # access-group
-        $EvalParams = @{ }
-        $EvalParams.StringToEval = $entry
-
-        $EvalParams.Regex = [regex] "^access-group\ (?<acl>[^\ ]+?)\ (?<dir>[^\ ]+?)\ interface\ (?<int>.+)"
-        $Eval = Get-RegexMatch @EvalParams
-        if ($Eval) {
-            Write-Verbose "$VerbosePrefix $entry"
-            $Interface = $Eval.Groups['int'].Value
-            $Lookup = $ReturnArray | Where-Object { $_.NameIf -eq $Interface }
-            if ($Lookup) {
-                $Lookup.AccessList = $Eval.Groups['acl'].Value
-                $Lookup.AccessListDirection = $Eval.Groups['dir'].Value
-            }
-
-            continue
-        } #>
     }
     return $ReturnArray
 }
