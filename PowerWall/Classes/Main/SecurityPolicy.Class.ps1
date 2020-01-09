@@ -9,6 +9,7 @@ Class SecurityPolicy:ICloneable {
     [string]$DestinationInterface
 
     [string[]]$Source
+    [string[]]$SourceUser
     [bool]$SourceNegate
 
     [string[]]$Destination
@@ -19,6 +20,7 @@ Class SecurityPolicy:ICloneable {
     [string]$SourcePort
     [string]$DestinationPort
     [string[]]$Service
+    [string[]]$Application
 
     [string]$ResolvedSource
     [string]$ResolvedDestination
@@ -34,6 +36,8 @@ Class SecurityPolicy:ICloneable {
 
     [decimal]$RxBytes
     [decimal]$TxBytes
+
+    [string]$Vdom
 
     ####################################### Methods ######################################
     # Clone
