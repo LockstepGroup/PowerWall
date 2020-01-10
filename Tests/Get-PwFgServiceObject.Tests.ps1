@@ -16,15 +16,6 @@ InModuleScope $ENV:BHProjectName {
     Describe "Get-PwFgServiceObject" {
         #region dummydata
         ########################################################################
-        $ServiceGroupObject = @()
-        $ServiceGroupObject += 'config firewall service custom'
-        $ServiceGroupObject += '    edit "ALL"'
-        $ServiceGroupObject += '        set category "General"'
-        $ServiceGroupObject += '        set protocol IP'
-        $ServiceGroupObject += ' port-object eq sqlnet'
-        $ServiceGroupObject += ' service-object object svc_tcp_8415'
-        $ServiceGroupObject += ' service-object udp destination range 35000 40000'
-
         $DummyConfig = @'
 config vdom
 edit root
