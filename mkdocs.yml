@@ -3,11 +3,19 @@ theme: readthedocs
 pages:
   - Home: index.md
   - Cmdlets:
+    - Get-PwAsaAnalysis: cmdlets/Get-PwAsaAnalysis.md
     - Get-PwAsaInterface: cmdlets/Get-PwAsaInterface.md
+    - Get-PwAsaIpsecTunnel: cmdlets/Get-PwAsaIpsecTunnel.md
     - Get-PwAsaNatPolicy: cmdlets/Get-PwAsaNatPolicy.md
     - Get-PwAsaObject: cmdlets/Get-PwAsaObject.md
     - Get-PwAsaSecurityPolicy: cmdlets/Get-PwAsaSecurityPolicy.md
     - Get-PwAsaStaticRoute: cmdlets/Get-PwAsaStaticRoute.md
+    - Get-PwFgAnalysis: cmdlets/Get-PwFgAnalysis.md
+    - Get-PwFgInterface: cmdlets/Get-PwFgInterface.md
+    - Get-PwFgNetworkObject: cmdlets/Get-PwFgNetworkObject.md
+    - Get-PwFgSecurityPolicy: cmdlets/Get-PwFgSecurityPolicy.md
+    - Get-PwFgServiceObject: cmdlets/Get-PwFgServiceObject.md
+    - Get-PwFgStaticRoute: cmdlets/Get-PwFgStaticRoute.md
     - Get-PwIpTableRule: cmdlets/Get-PwIpTableRule.md
     - Get-PwSsExpression: cmdlets/Get-PwSsExpression.md
     - Get-PwSsInterface: cmdlets/Get-PwSsInterface.md
@@ -19,6 +27,7 @@ pages:
     - Get-PwSwNatPolicy: cmdlets/Get-PwSwNatPolicy.md
     - Get-PwSwSecurityPolicy: cmdlets/Get-PwSwSecurityPolicy.md
     - Get-PwSwServiceObject: cmdlets/Get-PwSwServiceObject.md
+    - New-PwNatPolicy: cmdlets/New-PwNatPolicy.md
     - New-PwNetworkObject: cmdlets/New-PwNetworkObject.md
     - New-PwSecurityPolicy: cmdlets/New-PwSecurityPolicy.md
     - New-PwServiceObject: cmdlets/New-PwServiceObject.md

@@ -12,7 +12,7 @@
     RootModule        = 'PowerWall.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '1.0.2'
+    ModuleVersion     = '1.1.0'
 
     # Supported PSEditions
     # CompatiblePSEditions = @()
@@ -99,16 +99,24 @@
             # Tags = @()
 
             # A URL to the license for this module.
-            LicenseUri = 'https://raw.githubusercontent.com/LockstepGroup/PowerWall/master/LICENSE?token=AAF6JLX7JXMTN7WMZPCEWDK4YIMJG'
+            LicenseUri   = 'https://raw.githubusercontent.com/LockstepGroup/PowerWall/master/LICENSE?token=AAF6JLX7JXMTN7WMZPCEWDK4YIMJG'
 
             # A URL to the main website for this project.
-            ProjectUri = 'https://github.com/LockstepGroup/PowerWall'
+            ProjectUri   = 'https://github.com/LockstepGroup/PowerWall'
 
             # A URL to an icon representing this module.
             # IconUri = ''
 
             # ReleaseNotes of this module
-            # ReleaseNotes = ''
+            ReleaseNotes = '@
+Added many new cmdlets, mostly for Fortigate parsing:
+* Get-PwFgAnalysis
+* Get-PwFgInterface
+* Get-PwFgNetworkObject
+* Get-PwFgSecurityPolicy
+* Get-PwFgServiceObject
+* Get-PwFgStaticRoute
+@'
 
         } # End of PSData hashtable
 
@@ -121,5 +129,6 @@
     # DefaultCommandPrefix = ''
 
 }
+
 
 
