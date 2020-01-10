@@ -205,43 +205,6 @@ function Get-PwFgSecurityPolicy {
                 continue
             }
 
-            <# # set ip 192.0.2.1 255.255.255.0
-            $EvalParams.Regex = [regex] '^\ +set\ subnet\ (?<address>[^\ ]+)\ (?<mask>[^\ ]+)'
-            $Eval = Get-RegexMatch @EvalParams
-            if ($Eval) {
-                $Address = $Eval.Groups['address'].Value
-                $MaskLength = ConvertTo-MaskLength $Eval.Groups['mask'].Value
-                $NewObject.Member += $Address + '/' + $MaskLength
-                continue
-            }
-
-            # set member "DNS" "IMAP"
-            $EvalParams.Regex = [regex] '^\s+set\ member\ (.+)'
-            $Eval = Get-RegexMatch @EvalParams -ReturnGroupNumber 1
-            if ($Eval) {
-                $NewObject.Member = ($Eval -replace '"', '').Split()
-                continue
-            }
-
-            # set start-ip 192.0.2.1
-            $EvalParams.Regex = [regex] '^\s+set\ start-ip\ (.+)'
-            $Eval = Get-RegexMatch @EvalParams -ReturnGroupNumber 1
-            if ($Eval) {
-                $StartIp = $Eval
-                continue
-            }
-
-            if ($StartIp) {
-                # set end-ip 192.0.2.255
-                $EvalParams.Regex = [regex] '^\s+set\ end-ip\ (.+)'
-                $Eval = Get-RegexMatch @EvalParams -ReturnGroupNumber 1
-                if ($Eval) {
-                    $NewObject.Member += $StartIp + '-' + $Eval
-                    $StartIp = $null
-                    continue
-                }
-            } #>
-
             #region simpleprops
             ################################################
             if ($NewObject) {
