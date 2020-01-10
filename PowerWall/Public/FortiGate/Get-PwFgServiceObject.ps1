@@ -125,11 +125,14 @@ function Get-PwFgServiceObject {
             $EvalParams.Regex = [regex] '^\ +edit\ "(.+?)"'
             $Eval = Get-RegexMatch @EvalParams -ReturnGroupNumber 1
             if ($Eval) {
-                $NewObject = [ServiceObject]::new()
+                $NewObject = New-PwServiceObject -Name $Eval
                 $ReturnArray += $NewObject
 
-                $NewObject.Name = $Eval
+                #$NewObject.Name = $Eval
                 $NewObject.Vdom = $ActiveVdom
+                if ($Eval -ceq 'ALL') {
+                    $NewObject.DestinationPort = 'all'
+                }
                 continue
             }
 
@@ -142,7 +145,7 @@ function Get-PwFgServiceObject {
                 $Protocol = $Eval.Groups['protocol'].Value
                 $Range = $Eval.Groups['range'].Value
                 $NewObject.DestinationPort = $Range
-                $NewObject.Protocol = $Protocol
+                $NewObject.Protocol = $Protocol.ToLower()
                 continue
             }
 
@@ -150,7 +153,7 @@ function Get-PwFgServiceObject {
             $EvalParams.Regex = [regex] '^\s+set\ protocol-number\ (\d+)'
             $Eval = Get-RegexMatch @EvalParams -ReturnGroupNumber 1
             if ($Eval) {
-                $NewObject.DestinationPort = $NewObject.Protocol.ToLower() + '/' + $Eval
+                $NewObject.DestinationPort = $Eval
                 continue
             }
 
@@ -159,7 +162,7 @@ function Get-PwFgServiceObject {
             $Eval = Get-RegexMatch @EvalParams
             if ($Eval) {
                 if ($NewObject.Protocol -match '^ICMP6?$') {
-                    $NewObject.DestinationPort = 'icmp/all'
+                    $NewObject.DestinationPort = 'all'
                 }
                 continue
             }
@@ -169,7 +172,7 @@ function Get-PwFgServiceObject {
             $Eval = Get-RegexMatch @EvalParams -ReturnGroupNumber 1
             if ($Eval) {
                 if ($NewObject.Protocol -match '^ICMP6?$') {
-                    $NewObject.DestinationPort = 'icmp/' + $Eval
+                    $NewObject.DestinationPort = $Eval
                 }
                 continue
             }
@@ -184,6 +187,14 @@ function Get-PwFgServiceObject {
                 continue
             }
 
+            # set protocol IP
+            $EvalParams.Regex = [regex] '^\s+set\ protocol\ (.+)'
+            $Eval = Get-RegexMatch @EvalParams -ReturnGroupNumber 1
+            if ($Eval) {
+                $NewObject.Protocol = $Eval.ToLower()
+                continue
+            }
+
             #region simpleprops
             ################################################
             if ($NewObject) {
@@ -191,11 +202,6 @@ function Get-PwFgServiceObject {
                 $EvalParams.ReturnGroupNum = 1
                 $EvalParams.LoopName = 'fileloop'
                 $EvalParams.Verbose = $false
-
-                # set protocol IP
-                $EvalParams.ObjectProperty = "Protocol"
-                $EvalParams.Regex = [regex] '^\s+set\ protocol\ (.+)'
-                $Eval = Get-RegexMatch @EvalParams
 
                 # set category "General"
                 $EvalParams.ObjectProperty = "Category"
