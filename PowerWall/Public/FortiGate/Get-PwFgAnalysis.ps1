@@ -26,6 +26,12 @@ function Get-PwFgAnalysis {
         Throw "$VerbosePrefix ConfigPath does not exist: $ConfigPath"
     }
 
+    # check for ImportExcel module
+    try {
+        Import-Module ImportExcel
+    } catch {
+        Throw "VerbosePrefix This cmdlet requires ImportExcel module. https://github.com/dfinke/ImportExcel"
+    }
 
     #####################################################
     #endregion setup
