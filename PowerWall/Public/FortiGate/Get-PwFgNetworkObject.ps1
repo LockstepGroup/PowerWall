@@ -128,11 +128,15 @@ function Get-PwFgNetworkObject {
             $EvalParams.Regex = [regex] '^\ +edit\ "(.+?)"'
             $Eval = Get-RegexMatch @EvalParams -ReturnGroupNumber 1
             if ($Eval) {
+                Write-Verbose "$VerbosePrefix new object: $Eval"
                 $NewObject = [NetworkObject]::new()
                 $ReturnArray += $NewObject
 
                 $NewObject.Name = $Eval
                 $NewObject.Vdom = $ActiveVdom
+                if ($Eval -eq 'all') {
+                    $NewObject.Member += '0.0.0.0/0'
+                }
                 continue
             }
 
@@ -150,7 +154,9 @@ function Get-PwFgNetworkObject {
             $EvalParams.Regex = [regex] '^\s+set\ member\ (.+)'
             $Eval = Get-RegexMatch @EvalParams -ReturnGroupNumber 1
             if ($Eval) {
-                $NewObject.Member = ($Eval -replace '"', '').Split()
+                foreach ($m in $Eval.Split('" "')) {
+                    $NewObject.Member += $m.Trim('"')
+                }
                 continue
             }
 

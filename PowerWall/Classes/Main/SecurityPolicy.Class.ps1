@@ -5,8 +5,8 @@ Class SecurityPolicy:ICloneable {
     [string]$Name
     [string]$Action
 
-    [string]$SourceInterface
-    [string]$DestinationInterface
+    [string[]]$SourceInterface
+    [string[]]$DestinationInterface
 
     [string[]]$Source
     [string[]]$SourceUser

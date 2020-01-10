@@ -39,7 +39,7 @@ function Resolve-PolicyField {
         } elseif ($NatPolicy) {
             $Policy = $NatPolicy
         }
-        $global:Policy = $Policytest
+        $global:RPFPolicy = $Policy
         $global:FieldName = $FieldNametest
 
         if (($Policy.$FieldName.Count -gt 0) -and ("" -ne $Policy.$FieldName)) {
@@ -50,14 +50,22 @@ function Resolve-PolicyField {
 
                 $NewPolicy.$ResolvedFieldName = $Policy."Resolved$OriginalFieldName"
             } else {
+                $Params = @{ }
+                $Params.ObjectToResolve = $Policy.$FieldName
+                $Params.FirewallType = $FirewallType
+                Write-Verbose "$VerbosePrefix Checking Vdom"
+                if ($Policy.Vdom) {
+                    Write-Verbose "$VerbosePrefix Vdom: $Vdom"
+                    $Params.Vdom = $Policy.Vdom
+                }
                 switch -Regex ($FieldName) {
                     '(Source|Destination)' {
                         Write-Verbose "$VerbosePrefix Resolving Address"
-                        $ResolvedField = Resolve-PwObject -ObjectToResolve $Policy.$FieldName -ObjectList $Addresses -FirewallType $FirewallType
+                        $ResolvedField = Resolve-PwObject -ObjectList $Addresses @Params
                     }
                     'Service' {
                         Write-Verbose "$VerbosePrefix Resolving Service for AccessList $($Policy.AccessList) number $($Policy.Number)"
-                        $ResolvedField = Resolve-PwObject -ObjectToResolve $Policy.$FieldName -ObjectList $Services -FirewallType $FirewallType
+                        $ResolvedField = Resolve-PwObject -ObjectList $Services @Params
                     }
                     default {
                         Throw "$VerbosePrefix FieldName not handled: $FieldName"

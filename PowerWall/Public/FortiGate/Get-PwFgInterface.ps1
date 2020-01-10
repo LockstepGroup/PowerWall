@@ -137,7 +137,9 @@ function Get-PwFgInterface {
             $EvalParams.Regex = [regex] '^\ +set\ member\ (.+)'
             $Eval = Get-RegexMatch @EvalParams -ReturnGroupNumber 1
             if ($Eval) {
-                $NewObject.AggregateMember = ($Eval -replace '"', '').Split()
+                foreach ($m in $Eval.Split('" "')) {
+                    $NewObject.AggregateMember += $m.Trim('"')
+                }
                 continue
             }
 

@@ -8,7 +8,10 @@ function Resolve-PwObject {
         [array]$ObjectList,
 
         [Parameter(Mandatory = $False)]
-        [String]$FirewallType
+        [String]$FirewallType,
+
+        [Parameter(Mandatory = $False)]
+        [String]$Vdom
     )
 
     # It's nice to be able to see what cmdlet is throwing output isn't it?
@@ -22,12 +25,23 @@ function Resolve-PwObject {
         Write-Verbose "$VerbosePrefix Looking up $object"
         $Lookup = $ObjectList | Where-Object { $_.Name -ceq $object }
         if ($Lookup) {
-            Write-Verbose "$VerbosePrefix Object Found with type: $($Lookup.GetType().Name)"
+            Write-Verbose "$VerbosePrefix Object $($Lookup.Name) Found with type: $($Lookup.GetType().Name)"
+            Write-Verbose "$VerbosePrefix Vdom: $Vdom"
+            if ($Vdom) {
+                $Lookup = $Lookup | Where-Object { $_.Vdom -eq $Vdom }
+            }
             switch ($Lookup.GetType().Name) {
                 'ServiceObject' {
                     if ($Lookup.Member) {
                         Write-Verbose "$VerbosePrefix Looking up $($Lookup.Member.Count) members"
-                        $ReturnArray += Resolve-PwObject -ObjectToResolve $Lookup.Member -ObjectList $ObjectList
+                        $Params = @{ }
+                        $Params.ObjectToResolve = $Lookup.Member
+                        $Params.ObjectList = $ObjectList
+                        if ($Vdom) {
+                            $Params.Vdom = $Vdom
+                        }
+                        $ReturnArray += Resolve-PwObject @Params
+                        $global:lmember = $Lookup.Member
                     } else {
                         $New = "" | Select-Object Protocol, SourcePort, DestinationPort
 
@@ -69,7 +83,7 @@ function Resolve-PwObject {
             if ([HelperRegex]::isFqdnOrIpv4($object, $true) -or ($object -eq 'interface')) {
                 Write-Verbose "$VerbosePrefix Object is IP or FQDN"
                 $ReturnArray += $object
-            } elseif (($object -ne 'any') -and ($object -ne 'any4') ) {
+            } elseif (($object -ne 'any') -and ($object -ne 'any4') -and ($object -ne 'all')) {
                 Write-Verbose "$VerbosePrefix object is not 'any'"
                 $ServiceRx = [regex] '^(?<protocol>\w+(-\w+)?)\/(?<port>\d+(-\d+)?)$'
                 $ServiceMatch = $ServiceRx.Match($object)

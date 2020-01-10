@@ -54,6 +54,29 @@ function Get-PwFgStaticRoute {
         $EvalParams = @{ }
         $EvalParams.StringToEval = $entry
 
+        #region getvdom
+        ################################################
+        $EvalParams.Regex = [regex] '^config vdom$'
+        $Eval = Get-RegexMatch @EvalParams
+        if ($Eval) {
+            Write-Verbose "$VerbosePrefix $i Lookup for vdom"
+            $LookingForVdom = $true
+            continue fileloop
+        }
+
+        if ($LookingForVdom) {
+            $EvalParams.Regex = [regex] '^edit\ (.+)'
+            $Eval = Get-RegexMatch @EvalParams -ReturnGroupNumber 1
+            if ($Eval) {
+                Write-Verbose "$VerbosePrefix $i vdom found: $Eval"
+                $LookingForVdom = $false
+                $ActiveVdom = $Eval
+                continue fileloop
+            }
+        }
+        ################################################
+        #region getvdom
+
         $EvalParams.Regex = [regex] "^config\ router\ static"
         $Eval = Get-RegexMatch @EvalParams
         if ($Eval) {
@@ -88,6 +111,7 @@ function Get-PwFgStaticRoute {
             if ($Eval) {
                 $NewObject = [Route]::new()
                 $ReturnArray += $NewObject
+                $NewObject.Vdom = $ActiveVdom
                 continue
             }
 
@@ -126,7 +150,6 @@ function Get-PwFgStaticRoute {
             }
             ################################################
             #endregion simpleprops
-
 
             Write-Warning "VerbosePrefix $i UNHANDLED: $entry"
         }

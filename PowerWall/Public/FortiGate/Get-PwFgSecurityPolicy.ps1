@@ -137,7 +137,7 @@ function Get-PwFgSecurityPolicy {
 
                 $NewObject.Name = $Eval
                 $NewObject.Vdom = $ActiveVdom
-                $NewObject.Number = $ReturnArray.Count + 1
+                $NewObject.Number = $ReturnArray.Count
                 continue
             }
 
@@ -146,12 +146,14 @@ function Get-PwFgSecurityPolicy {
             $EvalParams.Regex = [regex] '^\s+set\ (?<direction>src|dst)intf\ (?<member>.+)'
             $Eval = Get-RegexMatch @EvalParams
             if ($Eval) {
-                switch ($Eval.Groups['direction'].Value) {
-                    'src' {
-                        $NewObject.SourceInterface = ($Eval.Groups['member'].Value -replace '"', '').Split()
-                    }
-                    'dst' {
-                        $NewObject.DestinationInterface = ($Eval.Groups['member'].Value -replace '"', '').Split()
+                foreach ($m in ($Eval.Groups['member'].Value).Split('" "')) {
+                    switch ($Eval.Groups['direction'].Value) {
+                        'src' {
+                            $NewObject.SourceInterface += $m.Trim('"')
+                        }
+                        'dst' {
+                            $NewObject.DestinationInterface += $m.Trim('"')
+                        }
                     }
                 }
                 continue
@@ -162,12 +164,14 @@ function Get-PwFgSecurityPolicy {
             $EvalParams.Regex = [regex] '^\s+set\ (?<direction>src|dst)addr\ (?<member>.+)'
             $Eval = Get-RegexMatch @EvalParams
             if ($Eval) {
-                switch ($Eval.Groups['direction'].Value) {
-                    'src' {
-                        $NewObject.Source = ($Eval.Groups['member'].Value -replace '"', '').Split()
-                    }
-                    'dst' {
-                        $NewObject.Destination = ($Eval.Groups['member'].Value -replace '"', '').Split()
+                foreach ($m in ($Eval.Groups['member'].Value).Split('" "')) {
+                    switch ($Eval.Groups['direction'].Value) {
+                        'src' {
+                            $NewObject.Source += $m.Trim('"')
+                        }
+                        'dst' {
+                            $NewObject.Destination += $m.Trim('"')
+                        }
                     }
                 }
                 continue
@@ -177,7 +181,9 @@ function Get-PwFgSecurityPolicy {
             $EvalParams.Regex = [regex] '^\s+set\ service\ (?<member>.+)'
             $Eval = Get-RegexMatch @EvalParams
             if ($Eval) {
-                $NewObject.DestinationPort = ($Eval.Groups['member'].Value -replace '"', '').Split()
+                foreach ($m in ($Eval.Groups['member'].Value).Split('" "')) {
+                    $NewObject.Service += $m.Trim('"')
+                }
                 continue
             }
 
@@ -185,7 +191,9 @@ function Get-PwFgSecurityPolicy {
             $EvalParams.Regex = [regex] '^\s+set\ groups\ (?<member>.+)'
             $Eval = Get-RegexMatch @EvalParams
             if ($Eval) {
-                $NewObject.SourceUser = ($Eval.Groups['member'].Value -replace '"', '').Split()
+                foreach ($m in ($Eval.Groups['member'].Value).Split('" "')) {
+                    $NewObject.SourceUser += $m.Trim('"')
+                }
                 continue
             }
 
@@ -193,7 +201,9 @@ function Get-PwFgSecurityPolicy {
             $EvalParams.Regex = [regex] '^\s+set\ application-list\ (?<member>.+)'
             $Eval = Get-RegexMatch @EvalParams
             if ($Eval) {
-                $NewObject.Application = ($Eval.Groups['member'].Value -replace '"', '').Split()
+                foreach ($m in ($Eval.Groups['member'].Value).Split('" "')) {
+                    $NewObject.Application += $m.Trim('"')
+                }
                 continue
             }
 

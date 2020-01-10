@@ -141,7 +141,8 @@ function Get-PwFgServiceObject {
             if ($Eval) {
                 $Protocol = $Eval.Groups['protocol'].Value
                 $Range = $Eval.Groups['range'].Value
-                $NewObject.DestinationPort = $Protocol + '/' + $Range
+                $NewObject.DestinationPort = $Range
+                $NewObject.Protocol = $Protocol
                 continue
             }
 
@@ -177,7 +178,9 @@ function Get-PwFgServiceObject {
             $EvalParams.Regex = [regex] '^\s+set\ member\ (.+)'
             $Eval = Get-RegexMatch @EvalParams -ReturnGroupNumber 1
             if ($Eval) {
-                $NewObject.Member = ($Eval -replace '"', '').Split()
+                foreach ($m in $Eval.Split('" "')) {
+                    $NewObject.Member += $m.Trim('"')
+                }
                 continue
             }
 

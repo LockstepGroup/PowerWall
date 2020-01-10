@@ -4,5 +4,6 @@ Class Route {
     [string]$NextHop
     [string]$Metric
     [string]$VirtualRouter
+    [string]$Vdom
     [string]$Comment
 }
