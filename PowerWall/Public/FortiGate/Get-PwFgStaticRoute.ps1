@@ -88,7 +88,7 @@ function Get-PwFgStaticRoute {
         if ($InSection) {
             #region ignoredregex
             ################################################
-            $EvalParams.Regex = [regex] '^\s+next$'
+            $EvalParams.Regex = [regex] '^\s?next$'
             $Eval = Get-RegexMatch @EvalParams
             if ($Eval) {
                 continue
@@ -106,7 +106,7 @@ function Get-PwFgStaticRoute {
             }
 
             # edit 1
-            $EvalParams.Regex = [regex] '^\ +edit\ \d+'
+            $EvalParams.Regex = [regex] '^\ *edit\ \d+'
             $Eval = Get-RegexMatch @EvalParams
             if ($Eval) {
                 $NewObject = [Route]::new()
@@ -116,7 +116,7 @@ function Get-PwFgStaticRoute {
             }
 
             # set dst 192.0.2.1 255.255.255.0
-            $EvalParams.Regex = [regex] '^\ +set\ dst\ (?<address>[^\ ]+)\ (?<mask>[^\ ]+)'
+            $EvalParams.Regex = [regex] '^\ *set\ dst\ (?<address>[^\ ]+)\ (?<mask>[^\ ]+)'
             $Eval = Get-RegexMatch @EvalParams
             if ($Eval) {
                 $Address = $Eval.Groups['address'].Value
@@ -135,17 +135,27 @@ function Get-PwFgStaticRoute {
 
                 # set gateway 192.0.2.1
                 $EvalParams.ObjectProperty = "NextHop"
-                $EvalParams.Regex = [regex] '^\s+set\ gateway\ (.+)'
+                $EvalParams.Regex = [regex] '^\s*set\ gateway\ (.+)'
                 $Eval = Get-RegexMatch @EvalParams
 
                 # set interface "Parent Interface"
                 $EvalParams.ObjectProperty = "Interface"
-                $EvalParams.Regex = [regex] '^\s+set\ device\ "(.+?)"'
+                $EvalParams.Regex = [regex] '^\s*set\ device\ "?(.+)"?'
                 $Eval = Get-RegexMatch @EvalParams
 
                 # set description "Description"
                 $EvalParams.ObjectProperty = "Comment"
-                $EvalParams.Regex = [regex] '^\s+set\ comment\ "(.+?)"'
+                $EvalParams.Regex = [regex] '^\s*set\ comment\ "?(.+)"?'
+                $Eval = Get-RegexMatch @EvalParams
+
+                # set distance 250
+                $EvalParams.ObjectProperty = "Metric"
+                $EvalParams.Regex = [regex] '^\s*set\ distance\ (\d+)'
+                $Eval = Get-RegexMatch @EvalParams
+
+                # set priority 250
+                $EvalParams.ObjectProperty = "Priority"
+                $EvalParams.Regex = [regex] '^\s*set\ priority\ (\d+)'
                 $Eval = Get-RegexMatch @EvalParams
             }
             ################################################

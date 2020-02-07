@@ -66,9 +66,9 @@ function Get-PwFgInterface {
             #region ignoredregex
             ################################################
             $IgnoredRegex = @()
-            $IgnoredRegex += '^\s+next$'
-            $IgnoredRegex += '^\s+set\ snmp-index\ \d+'
-            $IgnoredRegex += '^\s+set\ alias\ ".+"$'
+            $IgnoredRegex += '^\s*next$'
+            $IgnoredRegex += '^\s*set\ snmp-index\ \d+'
+            $IgnoredRegex += '^\s*set\ alias\ "?.+"?$'
 
             foreach ($regex in $IgnoredRegex) {
                 $EvalParams.Regex = [regex] $regex
@@ -91,7 +91,7 @@ function Get-PwFgInterface {
             }
 
             # start interface entry
-            $EvalParams.Regex = [regex] '^\ +edit\ "(.+?)"'
+            $EvalParams.Regex = [regex] '^\ *edit\ "?(.+)"?'
             $Eval = Get-RegexMatch @EvalParams -ReturnGroupNumber 1
             if ($Eval) {
                 $NewObject = [Interface]::new()
@@ -102,7 +102,7 @@ function Get-PwFgInterface {
             }
 
             # set mode dhcp
-            $EvalParams.Regex = [regex] '^\ +set\ mode\ dhcp'
+            $EvalParams.Regex = [regex] '^\ *set\ mode\ dhcp'
             $Eval = Get-RegexMatch @EvalParams
             if ($Eval) {
                 $NewObject.IsDhcpClient = $true
@@ -110,7 +110,7 @@ function Get-PwFgInterface {
             }
 
             # set mode pppoe
-            $EvalParams.Regex = [regex] '^\ +set\ mode\ pppoe'
+            $EvalParams.Regex = [regex] '^\ *set\ mode\ pppoe'
             $Eval = Get-RegexMatch @EvalParams
             if ($Eval) {
                 $NewObject.IsPPPoE = $true
@@ -118,7 +118,7 @@ function Get-PwFgInterface {
             }
 
             # set dedicated-to management
-            $EvalParams.Regex = [regex] '^\ +set\ dedicated-to\ management'
+            $EvalParams.Regex = [regex] '^\ *set\ dedicated-to\ management'
             $Eval = Get-RegexMatch @EvalParams
             if ($Eval) {
                 $NewObject.IsManagement = $true
@@ -126,7 +126,7 @@ function Get-PwFgInterface {
             }
 
             # set allowaccess ping https http fgfm capwap
-            $EvalParams.Regex = [regex] '^\ +set\ allowaccess\ (.+)'
+            $EvalParams.Regex = [regex] '^\ *set\ allowaccess\ (.+)'
             $Eval = Get-RegexMatch @EvalParams -ReturnGroupNumber 1
             if ($Eval) {
                 $NewObject.AllowedMgmtMethods = $Eval.Split()
@@ -134,7 +134,7 @@ function Get-PwFgInterface {
             }
 
             # set member "port3" "port4"
-            $EvalParams.Regex = [regex] '^\ +set\ member\ (.+)'
+            $EvalParams.Regex = [regex] '^\ *set\ member\ (.+)'
             $Eval = Get-RegexMatch @EvalParams -ReturnGroupNumber 1
             if ($Eval) {
                 foreach ($m in $Eval.Split('" "')) {
@@ -144,7 +144,7 @@ function Get-PwFgInterface {
             }
 
             # set ip 192.0.2.1 255.255.255.0
-            $EvalParams.Regex = [regex] '^\ +set\ ip\ (?<address>[^\ ]+)\ (?<mask>[^\ ]+)'
+            $EvalParams.Regex = [regex] '^\ *set\ ip\ (?<address>[^\ ]+)\ (?<mask>[^\ ]+)'
             $Eval = Get-RegexMatch @EvalParams
             if ($Eval) {
                 $Address = $Eval.Groups['address'].Value
@@ -162,27 +162,27 @@ function Get-PwFgInterface {
 
             # set vdom "root"
             $EvalParams.ObjectProperty = "Vdom"
-            $EvalParams.Regex = [regex] '^\s+set\ vdom\ "(.+?)"'
+            $EvalParams.Regex = [regex] '^\s*set\ vdom\ "?(.+)"?'
             $Eval = Get-RegexMatch @EvalParams
 
             # set type physical
             $EvalParams.ObjectProperty = "InterfaceType"
-            $EvalParams.Regex = [regex] '^\s+set\ type\ (.+)'
+            $EvalParams.Regex = [regex] '^\s*set\ type\ (.+)'
             $Eval = Get-RegexMatch @EvalParams
 
             # set vlanid 70
             $EvalParams.ObjectProperty = "VlanId"
-            $EvalParams.Regex = [regex] '^\s+set\ vlanid\ (\d+)'
+            $EvalParams.Regex = [regex] '^\s*set\ vlanid\ (\d+)'
             $Eval = Get-RegexMatch @EvalParams
 
             # set interface "Parent Interface"
             $EvalParams.ObjectProperty = "ParentInterface"
-            $EvalParams.Regex = [regex] '^\s+set\ interface\ "(.+?)"'
+            $EvalParams.Regex = [regex] '^\s*set\ interface\ "?(.+)"?'
             $Eval = Get-RegexMatch @EvalParams
 
             # set description "Description"
             $EvalParams.ObjectProperty = "Comment"
-            $EvalParams.Regex = [regex] '^\s+set\ description\ "(.+?)"'
+            $EvalParams.Regex = [regex] '^\s*set\ description\ "(.+)"'
             $Eval = Get-RegexMatch @EvalParams
 
             ################################################

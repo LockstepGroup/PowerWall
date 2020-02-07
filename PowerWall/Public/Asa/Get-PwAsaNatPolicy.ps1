@@ -114,7 +114,7 @@ function Get-PwAsaNatPolicy {
             $Protocol = $null
         }
 
-        $EvalParams = @{}
+        $EvalParams = @{ }
         $EvalParams.StringToEval = $entry
 
         # Single Line Nat
@@ -167,7 +167,7 @@ function Get-PwAsaNatPolicy {
                                      \ (?<src>.+?)
                                      \ (?<transrc>.+?)
                                      \ netmask
-                                     \ (?<mask>.+)
+                                     \ (?<mask>[^\ ]+)
                                      (?<inactive>\ inactive)?"
 
         $Eval = Get-RegexMatch @EvalParams

@@ -7,6 +7,7 @@ function Get-PwAsaAnalysis {
 
     Param (
         [Parameter(Mandatory = $True, Position = 0, ParameterSetName = 'config')]
+        [ValidateNotNullOrEmpty()]
         [string]$ConfigPath,
 
         [Parameter(Mandatory = $True, Position = 0, ParameterSetName = 'backup')]
@@ -34,11 +35,24 @@ function Get-PwAsaAnalysis {
 
             $ExcelPath = Join-Path -Path $DestinationDirectory -ChildPath "$BackupName`.xlsx"
             $ConfigPath = Join-Path -Path $DestinationDirectory -ChildPath "running-config.cfg"
+        } else {
+            Throw "BackupPath not found: $BackupPath"
+        }
+    } elseif ($ConfigPath) {
+        if (Test-Path $ConfigPath) {
+            $BackupDirectory = Get-ChildItem -Path $ConfigPath | Split-Path -Parent
+            $BackupName = (Get-ChildItem -Path $ConfigPath).BaseName
+            $DestinationDirectory = Join-Path -Path $BackupDirectory -ChildPath $BackupName
+
+            $ExcelPath = Join-Path -Path $DestinationDirectory -ChildPath "$BackupName`.xlsx"
+        } else {
+            Throw "ConfigPath not found: $ConfigPath"
         }
     }
 
     #region asa
     #####################################################
+    $global:test = $ConfigPath
 
     Write-Verbose "Getting Access Policies"
     $AccessPolicies = Get-PwAsaSecurityPolicy -ConfigPath $ConfigPath -Verbose:$false

@@ -233,8 +233,27 @@ function Get-PwAsaObject {
             }
 
             # service-object
-            $EvalParams.Regex = [regex] '^\ service-object\ (?<protocol>[^\ ]+)(?:\ (?:(?:destination\ )?(?<operator>[^\ ]+)\ (?<port>[^\ ]+)(?:\ (?<upperport>[^\ ]+))?|(?<port2>[^\ ]+)))?'
-            # service-object udp destination range 35000 40000
+            # service-object tcp source eq www eq www
+            # service-object tcp eq 9997
+            $EvalParams.Regex = [regex] '(?x)
+                                        ^\sservice-object
+                                        \s(?<protocol>[^\ ]+)
+                                        (?:\s
+                                            (?:
+                                                (
+                                                    (?:source\ )?
+                                                    (?<srcoperator>[^\ ]+)\s
+                                                    (?<srcport>[^\ ]+)
+                                                    (?:\ (?<srcupperport>\d+))?\s
+                                                )?
+                                                (?:destination\ )?
+                                                (?<operator>[^\ ]+)\s
+                                                (?<port>[^\ ]+)
+                                                (?:\ (?<upperport>[^\ ]+))?
+                                            |
+                                                (?<port2>[^\ ]+)
+                                            )
+                                        )?'
             $Eval = Get-RegexMatch @EvalParams
             if ($Eval) {
                 Write-Verbose "$VerbosePrefix Found: $($Eval.Value)"
