@@ -31,6 +31,9 @@ function Get-PwAsaNatPolicy {
     $NetworkObjectsWithNat = $NetworkObjects | Where-Object { $_.NatSourceInterface }
     $NetworkObjectsWithNatNeeded = $true
 
+    # Get interfaces to resolve pat statements
+    $Interfaces = Get-PwAsaInterface -ConfigPath $ConfigPath -Verbose:$false
+
     Write-Verbose "$VerbosePrefix NetworkObjectsWithNat: $($NetworkObjectsWithNat.Count)"
 
     # Setup return Array
@@ -159,8 +162,44 @@ function Get-PwAsaNatPolicy {
             }
         }
 
+        # static pat pre-8.3
+        # static (inside,outside) tcp interface 3303 192.0.2.1 ssh netmask 255.255.255.255
+        $EvalParams.Regex = [regex] "(?x)
+                                     ^static\ \((?<srcint>.+?),(?<dstint>.+?)\)
+                                     \ (?<protocol>tcp|udp)
+                                     \ (?<transrc>.+?)
+                                     \ (?<tranport>.+?)
+                                     \ (?<src>.+?)
+                                     \ (?<port>.+?)
+                                     \ netmask
+                                     \ (?<mask>[^\ ]+)
+                                     (?<inactive>\ inactive)?"
+
+        $Eval = Get-RegexMatch @EvalParams
+        if ($Eval) {
+            $n++
+            $NewObject = [NatPolicy]::new("Asa")
+            $ReturnArray += $NewObject
+            Write-Verbose "$VerbosePrefix $entry"
+
+            $NewObject.Number = $n
+            $NewObject.SourceInterface = $Eval.Groups['srcint'].Value
+            $NewObject.DestinationInterface = $Eval.Groups['dstint'].Value
+            $NewObject.OriginalSource = $Eval.Groups['src'].Value + '/' + (ConvertTo-MaskLength $Eval.Groups['mask'].Value)
+            if ($Eval.Groups['transrc'].Value -eq 'interface') {
+                $InterfaceLookup = $Interfaces | Where-Object { $_.Nameif -eq $NewObject.DestinationInterface }
+                $InterfaceLookup = $InterfaceLookup.Ipaddress -replace '\/\d+', "/$(ConvertTo-MaskLength $Eval.Groups['mask'].Value)"
+                $NewObject.TranslatedSource = $InterfaceLookup
+            } else {
+                $NewObject.TranslatedSource = $Eval.Groups['transrc'].Value + '/' + (ConvertTo-MaskLength $Eval.Groups['mask'].Value)
+            }
+            $NewObject.OriginalService = $Eval.Groups['protocol'].Value + '/' + $Eval.Groups['port'].Value
+            $NewObject.TranslatedService = $Eval.Groups['protocol'].Value + '/' + $Eval.Groups['tranport'].Value
+            continue fileloop
+        }
+
         # static single line nat from pre-8.3
-        # static (dmz,outside) 72.1.86.22 10.35.86.70 netmask 255.255.255.255
+        # static (dmz,outside) 198.51.100.1 192.0.2.1 netmask 255.255.255.255
 
         $EvalParams.Regex = [regex] "(?x)
                                      ^static\ \((?<srcint>.+?),(?<dstint>.+?)\)

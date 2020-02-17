@@ -51,7 +51,7 @@ function Get-PwAsaInterface {
         ###########################################################################################
         # Check for the Section
 
-        $EvalParams = @{}
+        $EvalParams = @{ }
         $EvalParams.StringToEval = $entry
 
         $EvalParams.Regex = [regex] "^interface\ (.+)"
@@ -89,7 +89,7 @@ function Get-PwAsaInterface {
 
         if ($KeepGoing) {
             # Special Properties
-            $EvalParams = @{}
+            $EvalParams = @{ }
             $EvalParams.StringToEval = $entry
 
             # ip address
@@ -97,7 +97,7 @@ function Get-PwAsaInterface {
             $Eval = Get-RegexMatch @EvalParams
             if ($Eval) {
                 $NewObject.IpAddress = $Eval.Groups['ip'].Value
-                $NewObject.IpAddress += (ConvertTo-MaskLength $Eval.Groups['mask'].Value)
+                $NewObject.IpAddress += '/' + (ConvertTo-MaskLength $Eval.Groups['mask'].Value)
                 continue
             }
 
@@ -138,7 +138,7 @@ function Get-PwAsaInterface {
         }
 
         # access-group
-        $EvalParams = @{}
+        $EvalParams = @{ }
         $EvalParams.StringToEval = $entry
 
         $EvalParams.Regex = [regex] "^access-group\ (?<acl>[^\ ]+?)\ (?<dir>[^\ ]+?)\ interface\ (?<int>.+)"

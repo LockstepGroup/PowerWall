@@ -50,6 +50,8 @@ function Get-PwAsaAnalysis {
         }
     }
 
+    Write-Verbose "$VerbosePrefix OutputPath is $ExcelPath"
+
     #region asa
     #####################################################
     $global:test = $ConfigPath
@@ -61,6 +63,10 @@ function Get-PwAsaAnalysis {
     $Objects = Get-PwAsaObject -ConfigPath $ConfigPath -Verbose:$false
     $NetworkObjects = $Objects | Where-Object { $_.GetType().Name -eq 'NetworkObject' }
     $ServiceObjects = $Objects | Where-Object { $_.GetType().Name -eq 'ServiceObject' }
+    if ($ServiceObjects.Count -eq 0) {
+        $ServiceObjects = @()
+        $ServiceObjects += New-PwServiceObject -name 'dummy-fake-service'
+    }
 
     Write-Verbose "Resolving Access Policies"
     $ResolvedAccessPolicies = $AccessPolicies | Resolve-PwSecurityPolicy -NetworkObjects $NetworkObjects -ServiceObjects $ServiceObjects -FirewallType 'asa' -Verbose:$false
