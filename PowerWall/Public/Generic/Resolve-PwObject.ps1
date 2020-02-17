@@ -95,6 +95,7 @@ function Resolve-PwObject {
                             'asa' {
                                 Write-Verbose "$VerbosePrefix Checking builtin asa services"
                                 $Lookup = $AsaServices | Where-Object { $_.Name -ceq $object }
+                                $Global:Glookup = $Lookup
                                 $New = "" | Select-Object Protocol, SourcePort, DestinationPort
 
                                 if ($Lookup.SourcePort) {

@@ -78,7 +78,7 @@ function Resolve-PolicyField {
                     $NewPolicy = $Policy.Clone()
                     $ReturnObject += $NewPolicy
 
-                    if ($FieldName -eq 'Service') {
+                    if ($FieldName -match 'Service') {
 
                         if ($null -eq $r.Protocol) {
                             $NewPolicy.$ResolvedFieldName = $Policy.Protocol + '/' + $r.DestinationPort

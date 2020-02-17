@@ -193,8 +193,20 @@ function Get-PwAsaNatPolicy {
             } else {
                 $NewObject.TranslatedSource = $Eval.Groups['transrc'].Value + '/' + (ConvertTo-MaskLength $Eval.Groups['mask'].Value)
             }
-            $NewObject.OriginalService = $Eval.Groups['protocol'].Value + '/' + $Eval.Groups['port'].Value
-            $NewObject.TranslatedService = $Eval.Groups['protocol'].Value + '/' + $Eval.Groups['tranport'].Value
+
+            $Port = $Eval.Groups['port'].Value
+            if ($Port -match '[a-z]') {
+                $NewObject.OriginalService = $Port
+            } else {
+                $NewObject.OriginalService = $Eval.Groups['protocol'].Value + '/' + $Port
+            }
+
+            $TranslatedPort = $Eval.Groups['tranport'].Value
+            if ($TranslatedPort -match '[a-z]') {
+                $NewObject.TranslatedService = $TranslatedPort
+            } else {
+                $NewObject.TranslatedService = $Eval.Groups['protocol'].Value + '/' + $TranslatedPort
+            }
             continue fileloop
         }
 
