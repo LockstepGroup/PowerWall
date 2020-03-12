@@ -57,12 +57,13 @@ function Get-PwAsaAnalysis {
 
     #region asa
     #####################################################
-    $global:test = $ConfigPath
 
-    Write-Verbose "Getting Access Policies"
+    Write-Verbose "$VerbosePrefix Getting Access Policies"
     $AccessPolicies = Get-PwAsaSecurityPolicy -ConfigPath $ConfigPath -Verbose:$false
+    $Global:AccessPolicies = $AccessPolicies
+    Write-Verbose "$VerbosePrefix Found $($AccessPolicies.Count) Access Policies"
 
-    Write-Verbose "Getting Objects"
+    Write-Verbose "$VerbosePrefix Getting Objects"
     $Objects = Get-PwAsaObject -ConfigPath $ConfigPath -Verbose:$false
     $NetworkObjects = $Objects | Where-Object { $_.GetType().Name -eq 'NetworkObject' }
     $ServiceObjects = $Objects | Where-Object { $_.GetType().Name -eq 'ServiceObject' }
@@ -70,8 +71,12 @@ function Get-PwAsaAnalysis {
         $ServiceObjects = @()
         $ServiceObjects += New-PwServiceObject -name 'dummy-fake-service'
     }
+    $Global:NetworkObjects = $NetworkObjects
+    $Global:ServiceObjects = $ServiceObjects
+    Write-Verbose "$VerbosePrefix Found $($NetworkObjects.Count) Network Objects"
+    Write-Verbose "$VerbosePrefix Found $($ServiceObjects.Count) Service Objects"
 
-    Write-Verbose "Resolving Access Policies"
+    Write-Verbose "$VerbosePrefix Resolving Access Policies"
     $ResolvedAccessPolicies = $AccessPolicies | Resolve-PwSecurityPolicy -NetworkObjects $NetworkObjects -ServiceObjects $ServiceObjects -FirewallType 'asa' -Verbose:$false
 
     Write-Verbose "Getting Nat Policies"
@@ -229,6 +234,8 @@ function Get-PwAsaAnalysis {
     Protocol,
     SourcePort, ResolvedSourcePort,
     DestinationPort, ResolvedDestinationPort,
+    @{ Name = 'SourceService'; Expression = { $_.SourceService -join ',' } },
+    ResolvedSourceService,
     @{ Name = 'Service'; Expression = { $_.Service -join ',' } },
     ResolvedService,
     Comment,

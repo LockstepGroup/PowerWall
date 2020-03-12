@@ -6,8 +6,11 @@ function Get-PwAsaSecurityPolicy {
 	#>
 
     Param (
-        [Parameter(Mandatory = $True, Position = 0)]
-        [string]$ConfigPath
+        [Parameter(Mandatory = $True, Position = 0, ParameterSetName = 'path')]
+        [string]$ConfigPath,
+
+        [Parameter(Mandatory = $True, Position = 0, ParameterSetName = 'array')]
+        [array]$ConfigArray
     )
 
     # It's nice to be able to see what cmdlet is throwing output isn't it?
@@ -16,8 +19,12 @@ function Get-PwAsaSecurityPolicy {
     Write-Verbose "$VerbosePrefix Getting rules from $ConfigPath"
 
     # Check for path and import
-    if (Test-Path $ConfigPath) {
-        $LoopArray = Get-Content $ConfigPath
+    if ($ConfigPath) {
+        if (Test-Path $ConfigPath) {
+            $LoopArray = Get-Content $ConfigPath
+        }
+    } else {
+        $LoopArray = $ConfigArray
     }
 
     # Setup return Array
@@ -148,8 +155,65 @@ function Get-PwAsaSecurityPolicy {
                 )
             )
         "
+
+        # access-list outside-in extended permit tcp any object-group DESTINATIONOBJECT eq www
+
+
         $Match = Get-RegexMatch $Regex $entry
         if ($Match) {
+
+            if ($Match.Groups['srcservice'].Success) {
+                if (-not $Match.Groups['dstnetwork'].success -or -not $Match.Groups['dsttype'].success) {
+                    Write-Verbose "$VerbosePrefix SourceService found but no destination. Updating Match"
+                    $Regex = [regex] "(?x)
+                        access-list\s
+                        (?<aclname>[^\ ]+?)\s
+                        (
+                            remark\s
+                            (?<remark>.+)
+                        |
+                            (
+                                (?<type>extended)\s
+                                (?<action>[^\ ]+?)
+
+                                # protocol
+                                \ ((?<prottype>object-group|object)\ )?(?<protocol>[^\ ]+?)
+
+                                # source
+                                (
+                                    \ ((?<srcnetwork>$IpRx)\ (?<srcmask>$IpRx))|
+                                    \ ((?<srctype>host|object-group|object)\ )?(?<source>[^\ ]+)
+                                )
+
+                                # destination
+                                (
+                                    \ ((?<dstnetwork>$IpRx)\ (?<dstmask>$IpRx))|
+                                    \ ((?<dsttype>host|object-group|object|interface)\ )?(?<destination>[^\ ]+)
+                                )
+                                # service
+                                (
+                                    \ (?<svctype>object-group|eq)\ (?<service>[^\ ]+)|
+                                    \ (?<svctype>range)\ (?<service>\w+\ \w+)|
+                                    \ (?<service>echo)
+                                )?
+
+                                # flags
+                                (?<log>\ log(\ (?<loglevel>\d+))?)?
+                                (?<inactive>\ inactive)?
+                            |
+                                (?<type>standard)\s
+                                (?<action>[^\ ]+?)\s
+                                (
+                                    ((?<srcnetwork>$IpRx)\ (?<srcmask>$IpRx))|
+                                    ((?<srctype>host|object-group|object)\ )?(?<source>[^\ ]+)
+                                )
+                            )
+                        )
+                    "
+                    $Match = Get-RegexMatch $Regex $entry
+                }
+            }
+
             Write-Verbose "$VerbosePrefix Match Found"
             if ($Match.Groups['remark'].Success) {
                 $Remark = $Match.Groups['remark'].Value
@@ -214,28 +278,24 @@ function Get-PwAsaSecurityPolicy {
             }
 
             #Service
-            $ProtocolType = $Match.Groups['prottype'].Value
+            $NewObject.Protocol = $Match.Groups['protocol'].Value
             $NewObject.Service = $Match.Groups['service'].Value
-            if ($ProtocolType -match 'object') {
+            <# if ($ProtocolType -match 'object') {
                 $NewObject.Service = $NewObject.Protocol
-            } else {
-                if ($NewObject.Service -match ".+\ .+") {
-                    $NewObject.Service = $NewObject.Protocol + '/' + ($NewObject.Service -replace ' ', '-')
-                } elseif ($NewObject.Service -match '^\d+$') {
-                    $NewObject.Service = $NewObject.Protocol + '/' + $NewObject.Service
-                }
+            } else { #>
+            if ($NewObject.Service -match ".+\ .+") {
+                $NewObject.Service = $NewObject.Protocol + '/' + ($NewObject.Service -replace ' ', '-')
+            } elseif ($NewObject.Service -match '^\d+$') {
+                $NewObject.Service = $NewObject.Protocol + '/' + $NewObject.Service
             }
+            <# } #>
 
             #SourceService
             $NewObject.SourceService = $Match.Groups['srcservice'].Value
-            if ($ProtocolType -match 'object') {
-                $NewObject.SourceService = $NewObject.Protocol
-            } else {
-                if ($NewObject.SourceService -match ".+\ .+") {
-                    $NewObject.SourceService = $NewObject.Protocol + '/' + ($NewObject.SourceService -replace ' ', '-')
-                } elseif ($NewObject.SourceService -match '^\d+$') {
-                    $NewObject.SourceService = $NewObject.Protocol + '/' + $NewObject.SourceService
-                }
+            if ($NewObject.SourceService -match ".+\ .+") {
+                $NewObject.SourceService = $NewObject.Protocol + '/' + ($NewObject.SourceService -replace ' ', '-')
+            } elseif ($NewObject.SourceService -match '^\d+$') {
+                $NewObject.SourceService = $NewObject.Protocol + '/' + $NewObject.SourceService
             }
 
             continue

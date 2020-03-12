@@ -59,13 +59,15 @@ function Resolve-PolicyField {
                     $Params.Vdom = $Policy.Vdom
                 }
                 switch -Regex ($FieldName) {
-                    '(Source|Destination)' {
-                        Write-Verbose "$VerbosePrefix Resolving Address"
-                        $ResolvedField = Resolve-PwObject -ObjectList $Addresses @Params
-                    }
-                    'Service' {
+                    '(SourceService|Service)' {
                         Write-Verbose "$VerbosePrefix Resolving Service for AccessList $($Policy.AccessList) number $($Policy.Number)"
                         $ResolvedField = Resolve-PwObject -ObjectList $Services @Params
+                        break
+                    }
+                    '(Source|Destination)' {
+                        Write-Verbose "$VerbosePrefix Resolving Address: $FieldName"
+                        $ResolvedField = Resolve-PwObject -ObjectList $Addresses @Params
+                        break
                     }
                     default {
                         Throw "$VerbosePrefix FieldName not handled: $FieldName"

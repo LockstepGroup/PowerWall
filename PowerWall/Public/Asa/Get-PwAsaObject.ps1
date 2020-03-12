@@ -169,7 +169,11 @@ function Get-PwAsaObject {
                 $Param1 = $Eval.Groups['param1'].Value
                 switch ($Param1) {
                     "host" {
-                        $NewObject.Member += $Eval.Groups['param2'].Value + '/32'
+                        if ($IpRx.Match($Eval.Groups['param2'].Value).Success) {
+                            $NewObject.Member += $Eval.Groups['param2'].Value + '/32'
+                        } else {
+                            $NewObject.Member += $Eval.Groups['param2'].Value
+                        }
                     }
                     "object" {
                         $NewObject.Member += $Eval.Groups['param2'].Value
@@ -241,7 +245,7 @@ function Get-PwAsaObject {
                                         (?:\s
                                             (?:
                                                 (
-                                                    (?:source\ )?
+                                                    (?:source\ )
                                                     (?<srcoperator>[^\ ]+)\s
                                                     (?<srcport>[^\ ]+)
                                                     (?:\ (?<srcupperport>\d+))?\s

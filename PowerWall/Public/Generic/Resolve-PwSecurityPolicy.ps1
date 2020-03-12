@@ -30,7 +30,7 @@ function Resolve-PwSecurityPolicy {
         $ResolvedPolicy = $ResolvedPolicy | Resolve-PolicyField -Services $ServiceObjects -FieldName 'Service' -FirewallType $FirewallType
 
         Write-Verbose "$VerbosePrefix Resolving SourceService, CurrentPolicy Count: $($ResolvedPolicy.Count)"
-        $ResolvedPolicy = $ResolvedPolicy | Resolve-PolicyField -Services $ServiceObjects -FieldName 'SourceService' -FirewallType $FirewallType
+        #$ResolvedPolicy = $ResolvedPolicy | Resolve-PolicyField -Services $ServiceObjects -FieldName 'SourceService' -FirewallType $FirewallType
 
         $ReturnArray += $ResolvedPolicy
     }
