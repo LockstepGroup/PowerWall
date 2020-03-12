@@ -95,6 +95,59 @@ function Get-PwAsaSecurityPolicy {
                 )
             )
         "
+
+        $Regex = [regex] "(?x)
+            access-list\s
+            (?<aclname>[^\ ]+?)\s
+            (
+                remark\s
+                (?<remark>.+)
+            |
+                (
+                    (?<type>extended)\s
+                    (?<action>[^\ ]+?)
+
+                    # protocol
+                    \ ((?<prottype>object-group|object)\ )?(?<protocol>[^\ ]+?)
+
+                    # source
+                    (
+                        \ ((?<srcnetwork>$IpRx)\ (?<srcmask>$IpRx))|
+                        \ ((?<srctype>host|object-group|object)\ )?(?<source>[^\ ]+)
+                    )
+
+                    # sourceservice
+                    (
+                        \ (?<srcsvctype>object-group|eq)\ (?<srcservice>[^\ ]+)|
+                        \ (?<srcsvctype>range)\ (?<srcservice>\w+\ \w+)|
+                        \ (?<srcservice>echo)
+                    )?
+
+                    # destination
+                    (
+                        \ ((?<dstnetwork>$IpRx)\ (?<dstmask>$IpRx))|
+                        \ ((?<dsttype>host|object-group|object|interface)\ )?(?<destination>[^\ ]+)
+                    )
+                    # service
+                    (
+                        \ (?<svctype>object-group|eq)\ (?<service>[^\ ]+)|
+                        \ (?<svctype>range)\ (?<service>\w+\ \w+)|
+                        \ (?<service>echo)
+                    )?
+
+                    # flags
+                    (?<log>\ log(\ (?<loglevel>\d+))?)?
+                    (?<inactive>\ inactive)?
+                |
+                    (?<type>standard)\s
+                    (?<action>[^\ ]+?)\s
+                    (
+                        ((?<srcnetwork>$IpRx)\ (?<srcmask>$IpRx))|
+                        ((?<srctype>host|object-group|object)\ )?(?<source>[^\ ]+)
+                    )
+                )
+            )
+        "
         $Match = Get-RegexMatch $Regex $entry
         if ($Match) {
             Write-Verbose "$VerbosePrefix Match Found"
@@ -126,11 +179,6 @@ function Get-PwAsaSecurityPolicy {
 
                 Write-Verbose "$VerbosePrefix Creating new SecurityPolicy: $($NewObject.AccessList):$($NewObject.AclType):$n"
             }
-
-
-
-
-
 
             $NewObject.Action = $Match.Groups['action'].Value
             $NewObject.Protocol = $Match.Groups['protocol'].Value
@@ -171,10 +219,22 @@ function Get-PwAsaSecurityPolicy {
             if ($ProtocolType -match 'object') {
                 $NewObject.Service = $NewObject.Protocol
             } else {
-                if ($NewObject.Service -match "\d+\ \d+") {
+                if ($NewObject.Service -match ".+\ .+") {
                     $NewObject.Service = $NewObject.Protocol + '/' + ($NewObject.Service -replace ' ', '-')
                 } elseif ($NewObject.Service -match '^\d+$') {
                     $NewObject.Service = $NewObject.Protocol + '/' + $NewObject.Service
+                }
+            }
+
+            #SourceService
+            $NewObject.SourceService = $Match.Groups['srcservice'].Value
+            if ($ProtocolType -match 'object') {
+                $NewObject.SourceService = $NewObject.Protocol
+            } else {
+                if ($NewObject.SourceService -match ".+\ .+") {
+                    $NewObject.SourceService = $NewObject.Protocol + '/' + ($NewObject.SourceService -replace ' ', '-')
+                } elseif ($NewObject.SourceService -match '^\d+$') {
+                    $NewObject.SourceService = $NewObject.Protocol + '/' + $NewObject.SourceService
                 }
             }
 

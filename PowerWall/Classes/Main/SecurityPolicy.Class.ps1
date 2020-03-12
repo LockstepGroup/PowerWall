@@ -19,6 +19,7 @@ Class SecurityPolicy:ICloneable {
     [string]$Protocol
     [string]$SourcePort
     [string]$DestinationPort
+    [string[]]$SourceService
     [string[]]$Service
     [string[]]$Application
 
