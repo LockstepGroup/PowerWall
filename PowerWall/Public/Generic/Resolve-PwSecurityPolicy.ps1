@@ -20,14 +20,17 @@ function Resolve-PwSecurityPolicy {
     }
 
     Process {
-        Write-Verbose "$VerbosePrefix Resolving OriginalSource, CurrentPolicy Count: $($Policy.Count)"
+        Write-Verbose "$VerbosePrefix Resolving Source, CurrentPolicy Count: $($Policy.Count)"
         $ResolvedPolicy = $Policy | Resolve-PolicyField -Addresses $NetworkObjects -FieldName 'Source' -FirewallType $FirewallType
 
-        Write-Verbose "$VerbosePrefix Resolving TranslatedSource, CurrentPolicy Count: $($ResolvedPolicy.Count)"
+        Write-Verbose "$VerbosePrefix Resolving Destination, CurrentPolicy Count: $($ResolvedPolicy.Count)"
         $ResolvedPolicy = $ResolvedPolicy | Resolve-PolicyField -Addresses $NetworkObjects -FieldName 'Destination' -FirewallType $FirewallType
 
-        Write-Verbose "$VerbosePrefix Resolving OriginalService, CurrentPolicy Count: $($ResolvedPolicy.Count)"
+        Write-Verbose "$VerbosePrefix Resolving Service, CurrentPolicy Count: $($ResolvedPolicy.Count)"
         $ResolvedPolicy = $ResolvedPolicy | Resolve-PolicyField -Services $ServiceObjects -FieldName 'Service' -FirewallType $FirewallType
+
+        Write-Verbose "$VerbosePrefix Resolving SourceService, CurrentPolicy Count: $($ResolvedPolicy.Count)"
+        $ResolvedPolicy = $ResolvedPolicy | Resolve-PolicyField -Services $ServiceObjects -FieldName 'SourceService' -FirewallType $FirewallType
 
         $ReturnArray += $ResolvedPolicy
     }
