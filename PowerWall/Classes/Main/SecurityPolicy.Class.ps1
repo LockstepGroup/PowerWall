@@ -28,6 +28,7 @@ Class SecurityPolicy:ICloneable {
     [string]$ResolvedSourcePort
     [string]$ResolvedDestinationPort
     [string]$ResolvedService
+    [string]$ResolvedSourceService
 
     [string]$Comment
     [string]$PacketState

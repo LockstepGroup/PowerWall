@@ -40,14 +40,14 @@ function Get-PwAsaAnalysis {
         }
     } elseif ($ConfigPath) {
         if (Test-Path $ConfigPath) {
-            $BackupDirectory = Get-ChildItem -Path $ConfigPath | Split-Path -Parent
+            #$BackupDirectory = Get-ChildItem -Path $ConfigPath | Split-Path -Parent
             $BackupName = (Get-ChildItem -Path $ConfigPath).BaseName
-            $DestinationDirectory = Join-Path -Path $BackupDirectory -ChildPath $BackupName
-            $NewDirectory = New-Item -Path $DestinationDirectory -ItemType Directory
+            $DestinationDirectory = Get-ChildItem -Path $ConfigPath | Split-Path -Parent
+            #$NewDirectory = New-Item -Path $DestinationDirectory -ItemType Directory
 
             $ExcelPath = Join-Path -Path $DestinationDirectory -ChildPath "$BackupName`.xlsx"
-            $CopyConfigPath = Join-Path -Path $NewDirectory -ChildPath 'running-config.txt'
-            $CopyItem = Copy-Item -Path $ConfigPath -Destination $CopyConfigPath
+            #$CopyConfigPath = Join-Path -Path $NewDirectory -ChildPath 'running-config.txt'
+            #$CopyItem = Copy-Item -Path $ConfigPath -Destination $CopyConfigPath
         } else {
             Throw "ConfigPath not found: $ConfigPath"
         }
