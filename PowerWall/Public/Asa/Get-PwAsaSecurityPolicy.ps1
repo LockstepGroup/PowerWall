@@ -119,21 +119,23 @@ function Get-PwAsaSecurityPolicy {
 
                     # source
                     (
-                        \ ((?<srcnetwork>$IpRx)\ (?<srcmask>$IpRx))|
-                        \ ((?<srctype>host|object-group|object)\ )?(?<source>[^\ ]+)
+                        \s((?<srcnetwork>$IpRx)\s(?<srcmask>$IpRx))|
+                        \s((?<srctype>host|object-group|object)\s)(?<source>[^\ ]+)|
+                        \s(?<source>any)
                     )
 
                     # sourceservice
                     (
-                        \ (?<srcsvctype>object-group|eq)\ (?<srcservice>[^\ ]+)|
-                        \ (?<srcsvctype>range)\ (?<srcservice>\w+\ \w+)|
-                        \ (?<srcservice>echo)
+                        \s(?<srcsvctype>object-group|eq)\s(?<srcservice>[^\ ]+)|
+                        \s(?<srcsvctype>range)\s(?<srcservice>\w+\s\w+)|
+                        \s(?<srcservice>echo)
                     )?
 
                     # destination
                     (
-                        \ ((?<dstnetwork>$IpRx)\ (?<dstmask>$IpRx))|
-                        \ ((?<dsttype>host|object-group|object|interface)\ )?(?<destination>[^\ ]+)
+                        \s((?<dstnetwork>$IpRx)\s(?<dstmask>$IpRx))|
+                        \s((?<dsttype>host|object-group|object|interface)\s)(?<destination>[^\ ]+)|
+                        \s(?<destination>any)
                     )
                     # service
                     (
@@ -161,60 +163,70 @@ function Get-PwAsaSecurityPolicy {
 
         $Match = Get-RegexMatch $Regex $entry
         if ($Match) {
+            Write-Verbose "$VerbosePrefix Match Found"
 
             if ($Match.Groups['srcservice'].Success) {
-                if (-not $Match.Groups['dstnetwork'].success -or -not $Match.Groups['dsttype'].success) {
-                    Write-Verbose "$VerbosePrefix SourceService found but no destination. Updating Match"
-                    $Regex = [regex] "(?x)
-                        access-list\s
-                        (?<aclname>[^\ ]+?)\s
-                        (
-                            remark\s
-                            (?<remark>.+)
-                        |
+                Write-Verbose "$VerbosePrefix SourceService found"
+                if (-not $Match.Groups['dstnetwork'].Success) {
+                    Write-Verbose "$VerbosePrefix dstnetwork not found"
+                    if (-not $Match.Groups['destination'].success) {
+                        Write-Verbose "$VerbosePrefix destination not found, updating match"
+                        $Regex = [regex] "(?x)
+                            access-list\s
+                            (?<aclname>[^\ ]+?)\s
                             (
-                                (?<type>extended)\s
-                                (?<action>[^\ ]+?)
-
-                                # protocol
-                                \ ((?<prottype>object-group|object)\ )?(?<protocol>[^\ ]+?)
-
-                                # source
-                                (
-                                    \ ((?<srcnetwork>$IpRx)\ (?<srcmask>$IpRx))|
-                                    \ ((?<srctype>host|object-group|object)\ )?(?<source>[^\ ]+)
-                                )
-
-                                # destination
-                                (
-                                    \ ((?<dstnetwork>$IpRx)\ (?<dstmask>$IpRx))|
-                                    \ ((?<dsttype>host|object-group|object|interface)\ )?(?<destination>[^\ ]+)
-                                )
-                                # service
-                                (
-                                    \ (?<svctype>object-group|eq)\ (?<service>[^\ ]+)|
-                                    \ (?<svctype>range)\ (?<service>\w+\ \w+)|
-                                    \ (?<service>echo)
-                                )?
-
-                                # flags
-                                (?<log>\ log(\ (?<loglevel>\d+))?)?
-                                (?<inactive>\ inactive)?
+                                remark\s
+                                (?<remark>.+)
                             |
-                                (?<type>standard)\s
-                                (?<action>[^\ ]+?)\s
                                 (
-                                    ((?<srcnetwork>$IpRx)\ (?<srcmask>$IpRx))|
-                                    ((?<srctype>host|object-group|object)\ )?(?<source>[^\ ]+)
+                                    (?<type>extended)\s
+                                    (?<action>[^\ ]+?)
+
+                                    # protocol
+                                    \ ((?<prottype>object-group|object)\ )?(?<protocol>[^\ ]+?)
+
+                                    # source
+                                    (
+                                        \ ((?<srcnetwork>$IpRx)\ (?<srcmask>$IpRx))|
+                                        \ ((?<srctype>host|object-group|object)\ )?(?<source>[^\ ]+)
+                                    )
+
+                                    # destination
+                                    (
+                                        \ ((?<dstnetwork>$IpRx)\ (?<dstmask>$IpRx))|
+                                        \ ((?<dsttype>host|object-group|object|interface)\ )?(?<destination>[^\ ]+)
+                                    )
+                                    # service
+                                    (
+                                        \ (?<svctype>object-group|eq)\ (?<service>[^\ ]+)|
+                                        \ (?<svctype>range)\ (?<service>\w+\ \w+)|
+                                        \ (?<service>echo)
+                                    )?
+
+                                    # flags
+                                    (?<log>\ log(\ (?<loglevel>\d+))?)?
+                                    (?<inactive>\ inactive)?
+                                |
+                                    (?<type>standard)\s
+                                    (?<action>[^\ ]+?)\s
+                                    (
+                                        ((?<srcnetwork>$IpRx)\ (?<srcmask>$IpRx))|
+                                        ((?<srctype>host|object-group|object)\ )?(?<source>[^\ ]+)
+                                    )
                                 )
                             )
-                        )
-                    "
-                    $Match = Get-RegexMatch $Regex $entry
+                        "
+                        $Match = Get-RegexMatch $Regex $entry
+                    } else {
+                        Write-Verbose "$VerbosePrefix dstnetwork found, keeping current match"
+                    }
+                } else {
+                    Write-Verbose "$VerbosePrefix destination found, keeping current match"
                 }
+            } else {
+                Write-Verbose "$VerbosePrefix no SourceService found, keeping current match"
             }
 
-            Write-Verbose "$VerbosePrefix Match Found"
             if ($Match.Groups['remark'].Success) {
                 $Remark = $Match.Groups['remark'].Value
                 #$NewObject.Comment = $Remark
