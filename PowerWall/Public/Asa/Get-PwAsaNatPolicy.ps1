@@ -180,7 +180,7 @@ function Get-PwAsaNatPolicy {
             $n++
             $NewObject = [NatPolicy]::new("Asa")
             $ReturnArray += $NewObject
-            Write-Verbose "$VerbosePrefix $entry"
+            Write-Verbose "$VerbosePrefix static nat: $entry"
 
             $NewObject.Number = $n
             $NewObject.SourceInterface = $Eval.Groups['srcint'].Value
@@ -191,7 +191,11 @@ function Get-PwAsaNatPolicy {
                 $InterfaceLookup = $InterfaceLookup.Ipaddress -replace '\/\d+', "/$(ConvertTo-MaskLength $Eval.Groups['mask'].Value)"
                 $NewObject.TranslatedSource = $InterfaceLookup
             } else {
-                $NewObject.TranslatedSource = $Eval.Groups['transrc'].Value + '/' + (ConvertTo-MaskLength $Eval.Groups['mask'].Value)
+                if ($IpRx.Match($Eval.Groups['transrc'].Value).Success) {
+                    $NewObject.TranslatedSource = $Eval.Groups['transrc'].Value + '/' + (ConvertTo-MaskLength $Eval.Groups['mask'].Value)
+                } else {
+                    $NewObject.TranslatedSource = $Eval.Groups['transrc'].Value
+                }
             }
 
             $Port = $Eval.Groups['port'].Value
@@ -232,7 +236,12 @@ function Get-PwAsaNatPolicy {
             $NewObject.SourceInterface = $Eval.Groups['srcint'].Value
             $NewObject.DestinationInterface = $Eval.Groups['dstint'].Value
             $NewObject.OriginalSource = $Eval.Groups['src'].Value + '/' + (ConvertTo-MaskLength $Eval.Groups['mask'].Value)
-            $NewObject.TranslatedSource = $Eval.Groups['transrc'].Value + '/' + (ConvertTo-MaskLength $Eval.Groups['mask'].Value)
+
+            if ($IpRx.Match($Eval.Groups['transrc'].Value).Success) {
+                $NewObject.TranslatedSource = $Eval.Groups['transrc'].Value + '/' + (ConvertTo-MaskLength $Eval.Groups['mask'].Value)
+            } else {
+                $NewObject.TranslatedSource = $Eval.Groups['transrc'].Value
+            }
         }
     }
 

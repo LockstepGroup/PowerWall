@@ -81,6 +81,7 @@ function Get-PwAsaAnalysis {
 
     Write-Verbose "Getting Nat Policies"
     $NatPolicies = Get-PwAsaNatPolicy -ConfigPath $ConfigPath -Verbose:$false
+    $Global:NatPolicies = $NatPolicies
     Write-Verbose "Resolving Nat Policies"
     $ResolvedNatPolicies = $NatPolicies | Resolve-PwNatPolicy -NetworkObjects $NetworkObjects -ServiceObjects $ServiceObjects -FirewallType 'asa' -Verbose:$false
 
