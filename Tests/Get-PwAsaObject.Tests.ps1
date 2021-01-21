@@ -1,4 +1,4 @@
-if (-not $ENV:BHProjectPath) {
+<# if (-not $ENV:BHProjectPath) {
     Set-BuildEnvironment -Path $PSScriptRoot\..
 }
 Remove-Module $ENV:BHProjectName -ErrorAction SilentlyContinue
@@ -42,4 +42,4 @@ InModuleScope $ENV:BHProjectName {
             $ParsedServiceGroupObject.Member.Count | Should -BeExactly 4
         }
     }
-}
+} #>
