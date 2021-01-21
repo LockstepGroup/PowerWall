@@ -30,7 +30,7 @@ function Get-PwFgAnalysis {
     try {
         Import-Module ImportExcel
     } catch {
-        Throw "VerbosePrefix This cmdlet requires ImportExcel module. https://github.com/dfinke/ImportExcel"
+        Throw "$VerbosePrefix This cmdlet requires ImportExcel module. https://github.com/dfinke/ImportExcel"
     }
 
     #####################################################

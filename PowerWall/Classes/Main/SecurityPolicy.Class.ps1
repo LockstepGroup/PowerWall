@@ -1,8 +1,11 @@
 Class SecurityPolicy:ICloneable {
     [string]$AccessList
     [string]$AclType
+
     [decimal]$Number
     [string]$Name
+    [string]$Index
+
     [string]$Action
 
     [string[]]$SourceInterface
@@ -39,7 +42,9 @@ Class SecurityPolicy:ICloneable {
     [decimal]$RxBytes
     [decimal]$TxBytes
 
+    # FortiGate Specific
     [string]$Vdom
+    [bool]$NatEnabled
 
     ####################################### Methods ######################################
     # Clone

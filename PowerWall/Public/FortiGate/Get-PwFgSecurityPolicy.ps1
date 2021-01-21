@@ -136,6 +136,7 @@ function Get-PwFgSecurityPolicy {
                 $ReturnArray += $NewObject
 
                 $NewObject.Name = $Eval
+                $NewObject.Index = $Eval
                 $NewObject.Vdom = $ActiveVdom
                 $NewObject.Number = $ReturnArray.Count
                 continue
@@ -215,6 +216,22 @@ function Get-PwFgSecurityPolicy {
                 continue
             }
 
+            # set nat disable
+            $EvalParams.Regex = [regex] '^\s+set\ nat\ enable'
+            $Eval = Get-RegexMatch @EvalParams
+            if ($Eval) {
+                $NewObject.NatEnabled = $true
+                continue
+            }
+
+            # set name "name"
+            $EvalParams.Regex = [regex] '^\s+set\ name\ "(.+?)"'
+            $Eval = Get-RegexMatch @EvalParams -ReturnGroupNumber 1
+            if ($Eval) {
+                $NewObject.Name = $Eval
+                continue
+            }
+
             #region simpleprops
             ################################################
             if ($NewObject) {
@@ -236,7 +253,7 @@ function Get-PwFgSecurityPolicy {
             ################################################
             #endregion simpleprops
 
-            Write-Warning "VerbosePrefix $i UNHANDLED: $entry"
+            Write-Warning "$VerbosePrefix $i UNHANDLED: $entry"
         }
     }
     return $ReturnArray

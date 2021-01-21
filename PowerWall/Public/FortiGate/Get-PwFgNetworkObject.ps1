@@ -37,6 +37,8 @@ function Get-PwFgNetworkObject {
     $IgnoredRegex += '^\s+set\ uuid\ .+'
     $IgnoredRegex += '^\s+set\ color\ \d+'
     $IgnoredRegex += '^\s+set\ type\ iprange'
+    $IgnoredRegex += '^\s+set\ type\ wildcard-fqdn'
+    $IgnoredRegex += '^\s+set\ type\ fqdn'
     $IgnoredRegex += '^\s+set\ associated-interface\ ".+"'
 
     $IpRx = [regex] "(\d+)\.(\d+)\.(\d+)\.(\d+)"
@@ -187,11 +189,25 @@ function Get-PwFgNetworkObject {
                 $EvalParams.LoopName = 'fileloop'
                 $EvalParams.Verbose = $false
 
+                # set fqdn "<fqdn>"
+                $EvalParams.ObjectProperty = "Member"
+                $EvalParams.Regex = [regex] '^\s+set\ fqdn\ "(.+?)"'
+                $Eval = Get-RegexMatch @EvalParams
+
+                # set wildcard-fqdn "<wildcard-fqdn>"
+                $EvalParams.ObjectProperty = "Member"
+                $EvalParams.Regex = [regex] '^\s+set\ wildcard-fqdn\ "(.+?)"'
+                $Eval = Get-RegexMatch @EvalParams
+
+                # set comment "<comment>"
+                $EvalParams.ObjectProperty = "Comment"
+                $EvalParams.Regex = [regex] '^\s+set\ comment\ "(.+?)"'
+                $Eval = Get-RegexMatch @EvalParams
             }
             ################################################
             #endregion simpleprops
 
-            Write-Warning "VerbosePrefix $i UNHANDLED: $entry"
+            Write-Warning "$VerbosePrefix $i UNHANDLED: $entry"
         }
     }
     return $ReturnArray

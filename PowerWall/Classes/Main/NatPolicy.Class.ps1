@@ -32,6 +32,9 @@ Class NatPolicy:ICloneable {
     [decimal]$RxBytes
     [decimal]$TxBytes
 
+    # Fortigate Only
+    [string]$Vdom
+
     ####################################### Methods ######################################
     # Clone
     [Object] Clone () {

@@ -161,7 +161,7 @@ function Get-PwFgStaticRoute {
             ################################################
             #endregion simpleprops
 
-            Write-Warning "VerbosePrefix $i UNHANDLED: $entry"
+            Write-Warning "$VerbosePrefix $i UNHANDLED: $entry"
         }
     }
     return $ReturnArray

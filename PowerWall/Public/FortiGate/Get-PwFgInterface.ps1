@@ -188,7 +188,7 @@ function Get-PwFgInterface {
             ################################################
             #endregion simpleprops
 
-            Write-Warning "VerbosePrefix $i UNHANDLED: $entry"
+            Write-Warning "$VerbosePrefix $i UNHANDLED: $entry"
         }
     }
     return $ReturnArray
