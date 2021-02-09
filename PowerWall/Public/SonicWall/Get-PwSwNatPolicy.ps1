@@ -100,7 +100,7 @@ function Get-PwSwNatPolicy {
 
             #######################################
             # Simple Properties
-            $EvalParams.ReturnGroupNum = 1
+            $EvalParams.ReturnGroupNum = 2
 
             # OriginalSource
             $EvalParams.Regex = [regex] "^Original\ (Src\ Address\ Object|Source)\ +:\ +(.+)"

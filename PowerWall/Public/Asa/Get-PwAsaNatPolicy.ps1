@@ -26,13 +26,17 @@ function Get-PwAsaNatPolicy {
     }
 
     # Get Network Objects to resolve network nat
-    $Objects = Get-PwAsaObject -ConfigPath $ConfigPath -Verbose:$false
+    # Get interfaces to resolve pat statements
+    if ($ConfigPath) {
+        $Objects = Get-PwAsaObject -ConfigPath $ConfigPath -Verbose:$false
+        $Interfaces = Get-PwAsaInterface -ConfigPath $ConfigPath -Verbose:$false
+    } else {
+        $Objects = Get-PwAsaObject -ConfigArray $ConfigArray -Verbose:$false
+        $Interfaces = Get-PwAsaInterface -ConfigArray $ConfigArray -Verbose:$false
+    }
     $NetworkObjects = $Objects | Where-Object { $_.GetType().Name -eq 'NetworkObject' }
     $NetworkObjectsWithNat = $NetworkObjects | Where-Object { $_.NatSourceInterface }
     $NetworkObjectsWithNatNeeded = $true
-
-    # Get interfaces to resolve pat statements
-    $Interfaces = Get-PwAsaInterface -ConfigPath $ConfigPath -Verbose:$false
 
     Write-Verbose "$VerbosePrefix NetworkObjectsWithNat: $($NetworkObjectsWithNat.Count)"
 
