@@ -7,7 +7,7 @@ function Resolve-PwNatPolicy {
         [Parameter(Mandatory = $True, Position = 1)]
         [NetworkObject[]]$NetworkObjects,
 
-        [Parameter(Mandatory = $True, Position = 2)]
+        [Parameter(Mandatory = $false, Position = 2)]
         [ServiceObject[]]$ServiceObjects,
 
         [Parameter(Mandatory = $False)]
@@ -33,11 +33,13 @@ function Resolve-PwNatPolicy {
         Write-Verbose "$VerbosePrefix Resolving TranslatedDestination, CurrentPolicy Count: $($ResolvedPolicy.Count)"
         $ResolvedPolicy = $ResolvedPolicy | Resolve-PolicyField -Addresses $NetworkObjects -FieldName 'TranslatedDestination' -FirewallType asa
 
-        Write-Verbose "$VerbosePrefix Resolving OriginalService, CurrentPolicy Count: $($ResolvedPolicy.Count)"
-        $ResolvedPolicy = $ResolvedPolicy | Resolve-PolicyField -Services $ServiceObjects -FieldName 'OriginalService' -FirewallType asa
+        if ($ServiceObjects) {
+            Write-Verbose "$VerbosePrefix Resolving OriginalService, CurrentPolicy Count: $($ResolvedPolicy.Count)"
+            $ResolvedPolicy = $ResolvedPolicy | Resolve-PolicyField -Services $ServiceObjects -FieldName 'OriginalService' -FirewallType asa
 
-        Write-Verbose "$VerbosePrefix Resolving TranslatedService, CurrentPolicy Count: $($ResolvedPolicy.Count)"
-        $ResolvedPolicy = $ResolvedPolicy | Resolve-PolicyField -Services $ServiceObjects -FieldName 'TranslatedService' -FirewallType asa
+            Write-Verbose "$VerbosePrefix Resolving TranslatedService, CurrentPolicy Count: $($ResolvedPolicy.Count)"
+            $ResolvedPolicy = $ResolvedPolicy | Resolve-PolicyField -Services $ServiceObjects -FieldName 'TranslatedService' -FirewallType asa
+        }
 
         foreach ($nat in $ResolvedPolicy) {
             # Nat Exempt Check
