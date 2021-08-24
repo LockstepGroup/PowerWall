@@ -32,6 +32,7 @@ function Get-PwFgVip {
 
     $IgnoredRegex = @()
     $IgnoredRegex += '^\s+next$'
+    $IgnoredRegex += '^\s+set\ uuid.*'
 
     $IpRx = [regex] "(\d+)\.(\d+)\.(\d+)\.(\d+)"
 
@@ -131,17 +132,13 @@ function Get-PwFgVip {
                 continue
             }
 
-          <#   [string]$SourceInterface
-            [string]$DestinationInterface
-
-            [string]$OriginalSource
-            [string]$OriginalDestination
-            [string]$OriginalService
-
-            [string]$TranslatedSource
-            [string]$TranslatedDestination
-            [string]$TranslatedService
- #>
+            # set nat-source-vip enable
+            $EvalParams.Regex = [regex] '^\s+set\ nat-source-vip\ enable'
+            $Eval = Get-RegexMatch @EvalParams
+            if ($Eval) {
+                $NewObject.NatSourceVip = $true
+                continue
+            }
 
             #region simpleprops
             ################################################
@@ -164,6 +161,11 @@ function Get-PwFgVip {
                 # set mappedip "192.0.2.1"
                 $EvalParams.ObjectProperty = "TranslatedDestination"
                 $EvalParams.Regex = [regex] '^\s*set\ mappedip\ "(.+?)"'
+                $Eval = Get-RegexMatch @EvalParams
+
+                # set comment "comment"
+                $EvalParams.ObjectProperty = "Comment"
+                $EvalParams.Regex = [regex] '^\s*set\ comment\ "(.+?)"'
                 $Eval = Get-RegexMatch @EvalParams
             }
             ################################################

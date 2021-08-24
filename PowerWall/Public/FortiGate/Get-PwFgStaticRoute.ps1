@@ -28,6 +28,11 @@ function Get-PwFgStaticRoute {
     # Setup return Array
     $ReturnArray = @()
 
+    #Ignored Regex
+    $IgnoredRegex = @()
+    $IgnoredRegex += '^\s+next$'
+    $IgnoredRegex += '^\s+set\ uuid.*'
+
     $IpRx = [regex] "(\d+)\.(\d+)\.(\d+)\.(\d+)"
 
     $TotalLines = $LoopArray.Count
@@ -88,10 +93,12 @@ function Get-PwFgStaticRoute {
         if ($InSection) {
             #region ignoredregex
             ################################################
-            $EvalParams.Regex = [regex] '^\s?next$'
-            $Eval = Get-RegexMatch @EvalParams
-            if ($Eval) {
-                continue
+            foreach ($regex in $IgnoredRegex) {
+                $EvalParams.Regex = [regex] $regex
+                $Eval = Get-RegexMatch @EvalParams
+                if ($Eval) {
+                    continue fileloop
+                }
             }
             ################################################
             #endregion ignoredregex

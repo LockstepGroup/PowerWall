@@ -68,6 +68,14 @@ function Get-PwSwSecurityPolicy {
             break
         }
 
+        $Regex = [regex] "^#Firewall\s:\sSecurity\sPolicy\sTable_END"
+        $Match = Get-RegexMatch $Regex $entry
+        if ($Match) {
+            $KeepGoing = $false
+            Write-Verbose "$VerbosePrefix Section Ends on line: $i"
+            break
+        }
+
         if ($KeepGoing) {
             #######################################
             # Special Properties
@@ -156,6 +164,33 @@ function Get-PwSwSecurityPolicy {
                 continue
             }
 
+            # Rule line 1
+            # example: Rule 1 LAN -> LAN Allow Service Any -> SNMP (Enabled)
+            $EvalParams.Regex = [regex] "^Rule\ (?<number>\d+)\ (?<sourcezone>.+?)\ ->\ (?<destzone>.+?)\ (?<action>.+?)\ Service (?<sourceservice>.+?)\ ->\ (?<destservice>.+?)\ \((?<status>.+?)\)"
+            $Eval = Get-RegexMatch @EvalParams
+            if ($Eval) {
+                $NewObject = [SecurityPolicy]::new("")
+                $NewObject.SourceInterface = $Eval.Groups['sourcezone'].Value
+                $NewObject.DestinationInterface = $Eval.Groups['destzone'].Value
+                $NewObject.Number = $Eval.Groups['number'].Value
+                $NewObject.SourcePort = $Eval.Groups['sourceservice'].Value
+                $NewObject.DestinationPort = $Eval.Groups['destservice'].Value
+                $NewObject.Action = $Eval.Groups['action'].Value
+
+                if ($Eval.Groups['status'].Value -eq 'Enabled') {
+                    $NewObject.Enabled = $true
+                } else {
+                    $NewObject.Enabled = $false
+                }
+
+                $ReturnArray += $NewObject
+
+                $Number++
+
+                Write-Verbose "$i`: Create New Rule"
+                continue
+            }
+
             #######################################
             # Special Properties
             $EvalParams.ReturnGroupNum = 1
@@ -177,7 +212,7 @@ function Get-PwSwSecurityPolicy {
             }
 
             # Comment
-            $EvalParams.Regex = [regex] "^comment:\ +(.+)"
+            $EvalParams.Regex = [regex] "^[Cc]omment:\ +(.+)"
             $Eval = Get-RegexMatch @EvalParams
             if ($Eval) {
                 $NewObject.Comment = $Eval
@@ -197,6 +232,14 @@ function Get-PwSwSecurityPolicy {
             $Eval = Get-RegexMatch @EvalParams
             if ($Eval) {
                 $NewObject.TxBytes = $Eval
+                continue
+            }
+
+            # Name
+            $EvalParams.Regex = [regex] "^Policy\ Name:\ +(.+)"
+            $Eval = Get-RegexMatch @EvalParams
+            if ($Eval) {
+                $NewObject.Name = $Eval
                 continue
             }
 

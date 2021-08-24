@@ -33,15 +33,15 @@ function Get-PwFgSecurityPolicy {
     $IgnoredRegex = @()
     $IgnoredRegex += '^\s+next$'
     $IgnoredRegex += '^\s+set\ uuid\ .+'
-    $IgnoredRegex += '^\s+set\ logtraffic\ .+'
     $IgnoredRegex += '^\s+set\ schedule\ ".+"'
-    $IgnoredRegex += '^\s+set\ av-profile\ ".+"'
-    $IgnoredRegex += '^\s+set\ ips-sensor\ ".+"'
-    $IgnoredRegex += '^\s+set\ ssl-ssh-profile\ ".+"'
-    $IgnoredRegex += '^\s+set\ utm-status\ .+'
+    #$IgnoredRegex += '^\s+set\ av-profile\ ".+"'
+    #$IgnoredRegex += '^\s+set\ ips-sensor\ ".+"'
+    #$IgnoredRegex += '^\s+set\ ssl-ssh-profile\ ".+"'
+    #$IgnoredRegex += '^\s+set\ utm-status\ .+'
     $IgnoredRegex += '^\s+set\ fsso\ disable'
     $IgnoredRegex += '^\s+set\ global-label\ ".+"'
-    $IgnoredRegex += '^\s+set\ scan-botnet-connections\ block'
+    #$IgnoredRegex += '^\s+set\ scan-botnet-connections\ block'
+    $IgnoredRegex += '^\s+set\ uiud.*'
 
     $IpRx = [regex] "(\d+)\.(\d+)\.(\d+)\.(\d+)"
 
@@ -139,6 +139,11 @@ function Get-PwFgSecurityPolicy {
                 $NewObject.Index = $Eval
                 $NewObject.Vdom = $ActiveVdom
                 $NewObject.Number = $ReturnArray.Count
+                $NewObject.Enabled = $true
+                #$NewObject.Action = 'deny'
+                $NewObject.LogTraffic = 'utm'
+
+                Write-Verbose "$VerbosePrefix $i`: $($NewObject.Index)"
                 continue
             }
 
@@ -224,11 +229,28 @@ function Get-PwFgSecurityPolicy {
                 continue
             }
 
-            # set name "name"
-            $EvalParams.Regex = [regex] '^\s+set\ name\ "(.+?)"'
+            # set dstaddr-enable
+            $EvalParams.Regex = [regex] '^\s+set\ dstaddr-negate\ enable'
+            $Eval = Get-RegexMatch @EvalParams
+            if ($Eval) {
+                $NewObject.DestinationNegate = $true
+                continue
+            }
+
+            # set logtraffic-start enable
+            $EvalParams.Regex = [regex] '^\s+set\ logtraffic-start\ enable'
+            $Eval = Get-RegexMatch @EvalParams
+            if ($Eval) {
+                $NewObject.LogTrafficStart = $true
+                continue
+            }
+
+            # set logtraffic-start enable
+            $EvalParams.Regex = [regex] '^\s+set\ action\ (.+)'
             $Eval = Get-RegexMatch @EvalParams -ReturnGroupNumber 1
             if ($Eval) {
-                $NewObject.Name = $Eval
+                Write-Verbose "$VerbosePrefix $i`: $($NewObject.Index): $Eval"
+                $NewObject.Action = $Eval
                 continue
             }
 
@@ -241,14 +263,24 @@ function Get-PwFgSecurityPolicy {
                 $EvalParams.Verbose = $false
             }
 
-            # set action accept
-            $EvalParams.ObjectProperty = "Action"
-            $EvalParams.Regex = [regex] '^\s+set\ action\ (.+)'
+            # set name "name"
+            $EvalParams.ObjectProperty = "Name"
+            $EvalParams.Regex = [regex] '^\s+set\ name\ "(.+?)"'
             $Eval = Get-RegexMatch @EvalParams
 
-            # set action accept
+            <# # set action <action>
+            $EvalParams.ObjectProperty = "Action"
+            $EvalParams.Regex = [regex] '^\s+set\ action\ (.+)'
+            $Eval = Get-RegexMatch @EvalParams #>
+
+            # set comments <comment>
             $EvalParams.ObjectProperty = "Comment"
             $EvalParams.Regex = [regex] '^\s+set\ comments\ "(.+?)"'
+            $Eval = Get-RegexMatch @EvalParams
+
+            # set logtraffic all
+            $EvalParams.ObjectProperty = "LogTraffic"
+            $EvalParams.Regex = [regex] '^\s+set\ logtraffic\ (.+)'
             $Eval = Get-RegexMatch @EvalParams
             ################################################
             #endregion simpleprops

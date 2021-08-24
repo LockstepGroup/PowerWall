@@ -28,6 +28,7 @@ Class NatPolicy:ICloneable {
     [bool]$ProxyArp
     [bool]$RouteLookup
     [bool]$NatExempt
+    [bool]$NatSourceVip
 
     [decimal]$RxBytes
     [decimal]$TxBytes

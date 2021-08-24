@@ -19,4 +19,6 @@ Class Interface {
     [string[]]$AggregateMember
     [bool]$IsManagement
     [bool]$IsPPPoE
+    [bool]$Disabled
+    [string]$Role
 }

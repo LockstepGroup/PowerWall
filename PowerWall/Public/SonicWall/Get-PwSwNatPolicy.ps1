@@ -190,6 +190,14 @@ function Get-PwSwNatPolicy {
                 continue
             }
 
+            # Name
+            $EvalParams.Regex = [regex] "^Name\ +:(\ )?(.+)"
+            $Eval = Get-RegexMatch @EvalParams
+            if ($Eval) {
+                $NewObject.Name = $Eval
+                continue
+            }
+
             Write-Verbose "$i $entry"
         }
     }

@@ -153,6 +153,14 @@ function Get-PwFgInterface {
                 continue
             }
 
+            # set status down
+            $EvalParams.Regex = [regex] '^\ *set\ status\ down'
+            $Eval = Get-RegexMatch @EvalParams
+            if ($Eval) {
+                $NewObject.Disabled = $true
+                continue
+            }
+
             #region simpleprops
             ################################################
             $EvalParams.VariableToUpdate = ([REF]$NewObject)
@@ -183,6 +191,11 @@ function Get-PwFgInterface {
             # set description "Description"
             $EvalParams.ObjectProperty = "Comment"
             $EvalParams.Regex = [regex] '^\s*set\ description\ "(.+)"'
+            $Eval = Get-RegexMatch @EvalParams
+
+            # set role <role>
+            $EvalParams.ObjectProperty = "Role"
+            $EvalParams.Regex = [regex] '^\s*set\ role\ (.+)'
             $Eval = Get-RegexMatch @EvalParams
 
             ################################################

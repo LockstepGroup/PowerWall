@@ -46,6 +46,11 @@ Class SecurityPolicy:ICloneable {
     [string]$Vdom
     [bool]$NatEnabled
 
+    # Logging
+    [string]$LogTraffic
+    [string]$LogTrafficStart
+    [string]$LogTrafficEnd = $true
+
     ####################################### Methods ######################################
     # Clone
     [Object] Clone () {
